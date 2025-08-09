@@ -1,9 +1,10 @@
 # INSA_CTC_Cyber_Security_Group_28
-Group Members name - Yehualashet Temesgen 
-                   - Oliyad Teshome
-                   - Nebiyu Dawit 
-                   - Amlakie Abebaw 
-                   - Paulos Berihun
+Group Members name 
+      - Yehualashet Temesgen 
+      - Oliyad Teshome
+      - Nebiyu Dawit 
+      - Amlakie Abebaw 
+      - Paulos Berihun
 # WAF & API Security Gateway
 
 A lightweight, scalable Web Application Firewall (WAF) combined with comprehensive API security features. Built using Nginx with ModSecurity and FastAPI, this solution is designed to provide robust, real-time protection for modern web applications and APIs, while maintaining ease of deployment and extensibility.
