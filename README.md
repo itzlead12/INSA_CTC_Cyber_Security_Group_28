@@ -7,33 +7,33 @@ This project is designed as a **cloud-based SaaS platform**, where multiple webs
 
 ##  Features  
 
-- ** User Authentication**  
+- **User Authentication**  
   - Secure signup and login with password hashing.  
 
-- ** Multi-Client Website Registration**  
+- **Multi-Client Website Registration**  
   - Websites register to use the WAF.  
   - Each client receives a unique API key/token for authentication.  
 
-- ** Proxy / Request Forwarding**  
+- **Proxy / Request Forwarding**  
   - Clients configure DNS/proxy to route traffic through the WAF.  
 
-- ** Rule-Based Threat Detection**  
+- **Rule-Based Threat Detection**  
   - Detect and block common attacks (SQL Injection, XSS) using pattern-matching rules.  
 
-- ** Request Filtering & Blocking**  
+- **Request Filtering & Blocking**  
   - Block malicious requests, forward safe ones to the real web server.  
 
-- ** Rate Limiting**  
+- **Rate Limiting**  
   - Limit requests per IP to prevent abuse or DoS attacks.  
 
-- ** Logging & Reports**  
+- **Logging & Reports**  
   - Store details of blocked requests:  
     - Client website  
     - Attacker IP  
     - Timestamp  
     - Rule triggered  
 
-- ** Admin Dashboard**  
+- **Admin Dashboard**  
   - Manage registered client websites.  
   - View traffic/attack stats per client.  
   - Review logs of blocked threats.  
