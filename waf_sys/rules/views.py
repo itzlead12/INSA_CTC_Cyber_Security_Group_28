@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, redirect
@@ -8,11 +8,10 @@ from .models import WAFRule, BlockedRequest
 from .forms import WAFRuleForm
 import json
 
-# to list rules
 @login_required
 def rules_list(request):
     rules = WAFRule.objects.select_related("client").all()
-    return render(request, "rules_list.html", {"rules": rules})# templates will be created
+    return render(request, "rules_list.html", {"rules": rules})
 
 @login_required
 def rules_create(request):
@@ -27,26 +26,27 @@ def rules_create(request):
 
 @require_GET
 def api_rules(request):
-    api_key = request.GET.get("api_key")
-    if not api_key:
-        return HttpResponseBadRequest("Missing api_key")
+    client_host = request.GET.get("client_host")
+    if not client_host:
+        return HttpResponseBadRequest("Missing client_host parameter")
     try:
-        client = Client.objects.get(api_key=api_key)
+        client = Client.objects.get(host=client_host)
     except Client.DoesNotExist:
-        return HttpResponseBadRequest("Invalid api_key")
+        # It's better to return a 404 for security reasons
+        return HttpResponseNotFound("Client configuration not found")
 
     rules = list(
         WAFRule.objects.filter(client=client, is_active=True).values("rule_type", "value")
     )
-    return JsonResponse({"client": client.name, "target_url": client.target_url, "rules": rules})
+    return JsonResponse({"client_name": client.name, "target_url": client.target_url, "rules": rules})
 
 @csrf_exempt
 @require_POST
 def api_log_blocked_request(request):
     try:
         data = json.loads(request.body.decode("utf-8"))
-        api_key = data.get("api_key")
-        client = Client.objects.get(api_key=api_key)
+        client_host = data.get("client_host")
+        client = Client.objects.get(host=client_host)
         BlockedRequest.objects.create(
             client=client,
             ip_address=data.get("ip_address","0.0.0.0"),
@@ -56,6 +56,6 @@ def api_log_blocked_request(request):
         )
         return JsonResponse({"status": "ok"})
     except Client.DoesNotExist:
-        return HttpResponseBadRequest("Invalid api_key")
+        return HttpResponseNotFound("Client not found for logging")
     except Exception as e:
         return HttpResponseBadRequest(f"Error: {e}")
