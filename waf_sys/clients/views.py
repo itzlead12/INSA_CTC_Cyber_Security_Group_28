@@ -10,7 +10,7 @@ def staff_required(view):
 @staff_required
 def client_list(request):
     clients = Client.objects.all()
-    return render(request, "clients_dashboard.html", {"clients": clients})
+    return render(request, "clients_list.html", {"clients": clients})
 
 @login_required(login_url="dashboard:login")
 @staff_required
