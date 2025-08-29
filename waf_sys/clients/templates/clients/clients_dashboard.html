@@ -38,9 +38,7 @@
 (function(){
   const FEED = document.getElementById('feed');
   const STATUS = document.getElementById('status');
-  // NOTE: This assumes the WAF is running on the same host but port 8080.
-  // The backend would need an updated WebSocket endpoint (e.g., /ws/client_host)
-  // to filter the stream.
+  
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + (location.hostname + ':8080') + '/ws');
 
   ws.onopen = () => {
@@ -59,9 +57,7 @@
   ws.onmessage = (ev) => {
     try {
       const data = JSON.parse(ev.data);
-      // Filter the incoming WebSocket data to only show events for this client.
-      // This is necessary because the FastAPI backend currently broadcasts all events.
-      // A future improvement would be to create a filtered WebSocket endpoint.
+
       if (data.client_name === "{{ client.name }}") {
         const newCard = document.createElement('div');
         newCard.className = 'bg-white rounded-lg shadow-md p-4';
@@ -76,7 +72,7 @@
           <p class="text-gray-500 text-sm mb-1">${data.user_agent || ''}</p>
           <code class="block bg-gray-100 rounded-md p-2 text-xs text-gray-700 overflow-x-auto">${data.request_path || ''}</code>
         `;
-        // Prepend the new card to the feed
+        
         FEED.prepend(newCard);
       }
     } catch(e) {
