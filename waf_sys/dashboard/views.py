@@ -10,7 +10,7 @@ def staff_required(view):
 @staff_required
 def admin_dashboard(request):
     latest = BlockedRequest.objects.select_related("client").order_by("-timestamp")[:50]
-    return render(request, "dashboard.html", {"initial": latest})#templates will be addedd for the dashboard
+    return render(request, "dashboard/dashboard.html", {"initial": latest})#templates will be addedd for the dashboard
 #dashboard for the clientw web owner
 # the clients dashboard page should stay at the client app
 @login_required(login_url="dashboard:login")
