@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render
+from django.contrib.auth import authenticate
 from rules.models import BlockedRequest
 
 def staff_required(view):
@@ -11,11 +12,17 @@ def admin_dashboard(request):
     latest = BlockedRequest.objects.select_related("client").order_by("-timestamp")[:50]
     return render(request, "dashboard.html", {"initial": latest})#templates will be addedd for the dashboard
 #dashboard for the clientw web owner
+# the clients dashboard page should stay at the client app
 @login_required(login_url="dashboard:login")
-def client_dashboard(request):
-    profile = getattr(request.user, "profile", None)
-    client = getattr(profile, "client", None)
-    initial = []
-    if client:
-        initial = client.blocked_requests.order_by("-timestamp")[:50]
-    return render(request, "clients_dashboard.html", {"initial": initial, "client": client})#templates will be addedd for the dashboard
+@staff_required
+def client_list(request):
+    clients = Client.objects.all()
+    return render(request, "dashboard/clients_list.html", {"clients": clients})
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+    return render(request, "dashboard/login.html")
