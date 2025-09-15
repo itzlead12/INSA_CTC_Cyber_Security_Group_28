@@ -33,7 +33,12 @@ def client_edit(request, pk):
         form = ClientForm(instance=client)
     return render(request, "clients/client_form.html", {"form": form})
 
-
+@login_required(login_url="dashboard:login")
+@staff_required
+def client_delete(request, pk):
+    client = get_object_or_404(Client, pk=pk)
+    client.delete()
+    return redirect("dashboard:client_list")
 
 @login_required(login_url="dashboard:login")
 def client_dashboard(request):
