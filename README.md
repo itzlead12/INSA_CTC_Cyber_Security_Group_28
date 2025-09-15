@@ -59,7 +59,7 @@ Rules and logs synchronized using API keys.
 ## Workflow
 **Step-by-Step Flow**
 
- - User visits a protected client website (e.g., https://client1-app.com).
+ - User visits a protected client website (e.g., https://**********.com).
 
  - Request first reaches the FastAPI WAF proxy.
 
@@ -74,37 +74,8 @@ Rules and logs synchronized using API keys.
  - Django dashboard updates in real-time with logs and analytics.
 
 ## Workflow Diagram
-   ┌──────────────┐
-   │ User Browser │
-   └───────┬──────┘
-           │
-           ▼
-   ┌───────────────────┐
-   │  Client Domain     │
-   │ (DNS → WAF Proxy)  │
-   └────────┬──────────┘
-            │
-            ▼
-   ┌───────────────────┐
-   │ FastAPI WAF Proxy │
-   │ - Rule fetch      │
-   │ - Filtering       │
-   │ - Blocking        │
-   └───────┬───────────┘
-           │ Safe traffic
-           ▼
-   ┌───────────────────┐
-   │ Client Web App    │
-   │ (Flask, Django…)  │
-   └───────────────────┘
-           │
-           ▼ Logs + Rules
-   ┌───────────────────┐
-   │ Django Backend    │
-   │ - Rule storage    │
-   │ - Logs DB         │
-   │ - Dashboard       │
-   └───────────────────┘
+   <img width="275" height="956" alt="image" src="https://github.com/user-attachments/assets/1d5a606c-cdcb-42ee-b73b-c2ef9c060084" />
+
 
 ## Future Work
 
