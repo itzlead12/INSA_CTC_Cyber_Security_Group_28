@@ -1,7 +1,7 @@
 # Multi-Client Web Application Firewall (WAF)  
 
 A **Web Application Firewall (WAF)** that protects multiple client websites from common web threats such as SQL Injection, Cross-Site Scripting (XSS), and denial-of-service attempts.  
-This project is designed as a **lay**, where multiple websites can register, get their own API key, and route traffic through the WAF for real-time protection, logging, and analytics.  
+This project is designed as a **host-based WAF**, where multiple websites can register, get their own API key, and route traffic through the WAF for real-time protection, logging, and analytics.  
 
 ---
 
