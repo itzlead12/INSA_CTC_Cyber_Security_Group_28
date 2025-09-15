@@ -1,60 +1,136 @@
-# Multi-Client Web Application Firewall (WAF)  
+## Web Application Firewall (WAF) as a Service
+**Problem It Solves**
 
-A **Web Application Firewall (WAF)** that protects multiple client websites from common web threats such as SQL Injection, Cross-Site Scripting (XSS), and denial-of-service attempts.  
-This project is designed as a **host-based WAF**, where multiple websites can register, get their own API key, and route traffic through the WAF for real-time protection, logging, and analytics.  
+Small and medium websites often lack affordable, easy-to-manage security against common web attacks. Traditional enterprise firewalls are either:
 
----
+ - Too expensive to license and maintain.
 
-##  Features  
+ - Too complex for small teams to configure.
 
-- **User Authentication**  
-  - Secure signup and login with password hashing.  
 
-- **Multi-Client Website Registration**  
-  - Websites register to use the WAF.  
-  - Each client receives a unique API key/token for authentication.  
+## This project provides an affordable, centralized WAF as a Service, designed to protect multiple client web applications, with:
 
-- **Proxy / Request Forwarding**  
-  - Clients configure DNS/proxy to route traffic through the WAF.  
+- Easy onboarding (just point the domain DNS to the WAF).
 
-- **Rule-Based Threat Detection**  
-  - Detect and block common attacks (SQL Injection, XSS) using pattern-matching rules.  
+- Custom rule management per client.
 
-- **Request Filtering & Blocking**  
-  - Block malicious requests, forward safe ones to the real web server.  
+- Real-time analytics and blocking.
 
-- **Rate Limiting**  
-  - Limit requests per IP to prevent abuse or DoS attacks.  
+## Key Features
 
-- **Logging & Reports**  
-  - Store details of blocked requests:  
-    - Client website  
-    - Attacker IP  
-    - Timestamp  
-    - Rule triggered  
+  - Attack Detection & Blocking
 
-- **Admin Dashboard**  
-  - Manage registered client websites.  
-  - View traffic/attack stats per client.  
-  - Review logs of blocked threats.  
-  - Add/update detection rules.  
+  - SQL Injection prevention
 
----
+  - Cross-Site Scripting (XSS) filtering
 
-##  Problem It Solves  
-Small and medium websites often lack affordable, easy-to-manage security against common web attacks. Traditional firewalls are either:  
-- Too expensive 
-- Complex to configure  
-- Limited to one site only  
+  - User-Agent blocking (bots, scanners, crawlers)
 
-This WAF provides **affordable, centralized protection** for multiple sites, with easy onboarding and powerful analytics.  
+  - Geo-blocking (restrict traffic by country)
 
----
+  - Rate limiting (mitigate brute-force and DoS attempts)
+
+## Multi-Tenant Support
+
+Each client can register their app with its own domain.
+
+Separate rules and logs per client.
+
+ Reverse Proxy Protection
+
+All requests go through the FastAPI WAF proxy.
+
+Safe traffic is forwarded to the client’s actual app.
+
+Malicious requests are blocked and logged.
+
+ Centralized Dashboard (Django)
+
+Admin UI for client and rule management.
+
+Real-time log feed with WebSocket.
+
+Analytics for blocked and allowed requests.
+
+ Secure WAF-to-Django Communication
+
+Rules and logs synchronized using API keys.
+
+## Workflow
+**Step-by-Step Flow**
+
+ - User visits a protected client website (e.g., https://client1-app.com).
+
+ - Request first reaches the FastAPI WAF proxy.
+
+ - WAF fetches security rules for that client from the Django backend.
+
+ - Request is analyzed against rules (SQLi, XSS, rate limit, etc.).
+
+- If malicious, request is blocked → logged → sent to dashboard.
+
+- If safe, request is forwarded to the client’s real app server.
+
+ - Django dashboard updates in real-time with logs and analytics.
+
+## Workflow Diagram
+   ┌──────────────┐
+   │ User Browser │
+   └───────┬──────┘
+           │
+           ▼
+   ┌───────────────────┐
+   │  Client Domain     │
+   │ (DNS → WAF Proxy)  │
+   └────────┬──────────┘
+            │
+            ▼
+   ┌───────────────────┐
+   │ FastAPI WAF Proxy │
+   │ - Rule fetch      │
+   │ - Filtering       │
+   │ - Blocking        │
+   └───────┬───────────┘
+           │ Safe traffic
+           ▼
+   ┌───────────────────┐
+   │ Client Web App    │
+   │ (Flask, Django…)  │
+   └───────────────────┘
+           │
+           ▼ Logs + Rules
+   ┌───────────────────┐
+   │ Django Backend    │
+   │ - Rule storage    │
+   │ - Logs DB         │
+   │ - Dashboard       │
+   └───────────────────┘
+
+## Future Work
+
+
+- Machine Learning & Anomaly Detection
+
+- Detect unknown attack patterns with ML models.
+
+- Adaptive learning from traffic patterns.
+
+- TLS termination (HTTPS at WAF layer).
+
+- Automatic certificate management (e.g., Let’s Encrypt).
+
+- Kubernetes deployment with auto-scaling.
+
+- High-availability load balancing.
+
+- Alerts via Slack/Email/SMS.
+
+- Client Self-Service
+
+- Expose an API for clients to manage their own rules.
 
 ##  Tech Stack
 - **Backend:** Django / FastAPI  
 - **Web Server / Proxy:** Nginx  
 - **Database:** PostgreSQL / MySQL  
-- **Authentication:** JWT / Session-based  
-- **Frontend Dashboard:** React / HTML + CSS + JS  
-
+- **Frontend Dashboard:** HTML + CSS(tailwind) + JS 
