@@ -1,0 +1,88 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Clients List{% endblock title %}
+{% block content %}
+<div class="bg-gray-100 min-h-screen flex items-start justify-center p-4 md:p-8">
+    <div class="w-full max-w-5xl bg-white rounded-lg shadow-xl p-6 md:p-8">
+        <!-- Dashboard Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2 md:mb-0">WAF Clients</h1>
+            <!-- Action button for adding a new client -->
+            <a href="{% url 'customers:client_create' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-full transition-colors duration-300 shadow-md">
+                Add New Client
+            </a>
+        </div>
+
+        <!-- Clients Table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Name
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Host
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Target URL
+                        </th>
+                        <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for client in clients %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ client.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ client.host }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">{{ client.target_url }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="{% url 'customers:client_edit' client.id %}" class="text-blue-600 hover:text-blue-900 transition-colors duration-200 mr-4">Edit</a>
+
+                            <button type="button" onclick="openDeleteModal('{{ client.name }}', {{ client.id }})" class="text-red-600 hover:text-red-900 transition-colors duration-200">Delete</button>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
+                            No clients found. Click "Add New Client" to get started!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div id="deleteModal" class="hidden fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Confirm Delete</h2>
+        <p class="text-gray-600 mb-6">
+            Are you sure you want to delete 
+            <span id="clientName" class="font-semibold text-red-600"></span>?
+        </p>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeDeleteModal()" 
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">
+                Cancel
+            </button>
+            <form id="deleteForm" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 shadow-md transition">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="{% static "js/owxf.js" %}"></script>
+<script src="{% static "js/tailwind.js" %}"></script>
+{% endblock content %}
