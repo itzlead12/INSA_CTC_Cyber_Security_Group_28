@@ -67,6 +67,7 @@ async def waf_middleware(request: Request, call_next):
         return JSONResponse({"detail": "Blocked by WAF"}, status_code=403)
 
     return await call_next(request)
+RATE_LIMIT: Dict[str, Dict[str, Any]] = {}
 
 # ----------------- WebSocket -----------------
 
