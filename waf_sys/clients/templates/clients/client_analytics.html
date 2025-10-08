@@ -1,0 +1,84 @@
+<!-- clients/templates/clients/client_analytics.html -->
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}{{ client.name }} - Analytics{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ client.name }} Analytics</h1>
+            <p class="text-gray-600">Traffic and threat trends over the last 30 days</p>
+        </div>
+        <a href="{% url 'clients:client_dashboard' client.pk %}" 
+           class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Daily Traffic Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Daily Traffic (Last 30 Days)</h3>
+        <div id="trafficChart" style="height: 300px;"></div>
+    </div>
+
+    <!-- Top Blocked IPs -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Top Blocked IPs (Last 30 Days)</h3>
+        <div class="space-y-3 max-h-80 overflow-y-auto">
+            {% for ip in top_blocked_ips %}
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
+                <span class="font-mono text-sm text-gray-900">{{ ip.ip_address }}</span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    {{ ip.count }} blocks
+                </span>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                <p>No blocked IPs in the last 30 days</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static "js/apexcharts.js" %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prepare data for chart
+    const dailyTraffic = {{ daily_traffic|safe }};
+    
+    const series = [{
+        name: 'Blocked',
+        data: dailyTraffic.map(d => d.blocked),
+        color: '#EF4444'
+    }, {
+        name: 'Allowed',
+        data: dailyTraffic.map(d => d.allowed),
+        color: '#10B981'
+    }];
+
+    const categories = dailyTraffic.map(d => d.date);
+
+    const options = {
+        series: series,
+        chart: { type: 'bar', height: 300, stacked: true },
+        plotOptions: { bar: { horizontal: false } },
+        xaxis: { categories: categories, title: { text: 'Date' } },
+        yaxis: { title: { text: 'Requests' } },
+        legend: { position: 'top' },
+        tooltip: { shared: true }
+    };
+
+    const chart = new ApexCharts(document.querySelector("#trafficChart"), options);
+    chart.render();
+});
+</script>
+{% endblock %}
