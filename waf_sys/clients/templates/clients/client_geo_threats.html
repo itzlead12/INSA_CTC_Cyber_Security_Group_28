@@ -1,0 +1,201 @@
+
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}{{ client.name }} - Threat Map{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ client.name }} - Threat Map</h1>
+            <p class="text-gray-600">Geographic visualization of attack sources</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'clients:client_analytics' client.pk %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+            </a>
+            <a href="{% url 'clients:client_dashboard' client.pk %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-red-100 rounded-lg">
+                <i class="fas fa-globe-americas text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Countries</p>
+                <h3 id="countriesCount" class="text-2xl font-bold text-gray-900">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-orange-100 rounded-lg">
+                <i class="fas fa-map-marker-alt text-orange-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Unique IPs</p>
+                <h3 id="uniqueIpsCount" class="text-2xl font-bold text-gray-900">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-purple-100 rounded-lg">
+                <i class="fas fa-biohazard text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Threats</p>
+                <h3 id="totalThreatsCount" class="text-2xl font-bold text-gray-900">0</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-blue-100 rounded-lg">
+                <i class="fas fa-shield-alt text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Time Range</p>
+                <h3 class="text-lg font-bold text-gray-900">30 Days</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- World Map -->
+    <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Threat Sources Worldwide</h3>
+        <div id="threatMap" style="height: 500px; background: #f8fafc; border-radius: 8px;"></div>
+    </div>
+
+    <!-- Top Threat Sources -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Top Threat Sources</h3>
+        <div class="space-y-3 max-h-500 overflow-y-auto">
+            <div id="threatSourcesList">
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Loading threat data...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 flex items-center">
+        <i class="fas fa-spinner fa-spin text-blue-600 text-xl mr-3"></i>
+        <span class="text-gray-700">Loading threat map data...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let threatMap;
+    let mapData = [];
+
+    // Initialize map
+    function initMap() {
+        threatMap = L.map('threatMap').setView([20, 0], 2);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(threatMap);
+    }
+
+    // Load threat data
+    function loadThreatData() {
+        fetch(`{% url 'clients:client_api_geo_threats' client.pk %}`)
+            .then(response => response.json())
+            .then(data => {
+                // Update stats
+                document.getElementById('countriesCount').textContent = data.map_data.length;
+                document.getElementById('totalThreatsCount').textContent = data.total_threats;
+                
+                const uniqueIps = new Set();
+                data.map_data.forEach(item => uniqueIps.add(item.unique_ips));
+                document.getElementById('uniqueIpsCount').textContent = data.top_threat_sources.length;
+
+                // Add markers to map
+                data.map_data.forEach(location => {
+                    if (location.lat && location.lng) {
+                        const circle = L.circleMarker([location.lat, location.lng], {
+                            color: 'red',
+                            fillColor: '#f87171',
+                            fillOpacity: 0.5,
+                            radius: location.radius
+                        }).addTo(threatMap);
+                        
+                        circle.bindPopup(`
+                            <div class="p-2">
+                                <h4 class="font-bold">${location.country}</h4>
+                                <p>Threats: ${location.threats}</p>
+                                <p>Unique IPs: ${location.unique_ips}</p>
+                            </div>
+                        `);
+                    }
+                });
+
+                // Update threat sources list
+                updateThreatSourcesList(data.top_threat_sources);
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
+            })
+            .catch(error => {
+                console.error('Error loading threat data:', error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+            });
+    }
+
+    function updateThreatSourcesList(sources) {
+        const container = document.getElementById('threatSourcesList');
+        
+        if (sources.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                    <p>No threats detected in the last 30 days</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = sources.map(source => `
+            <div class="flex justify-between items-center p-3 bg-gray-50 rounded border-l-4 border-red-500">
+                <div class="flex-1">
+                    <div class="font-mono text-sm font-semibold text-gray-900">${source.ip_address}</div>
+                    <div class="text-xs text-gray-600">
+                        ${source.geolocation__city || 'Unknown'}, ${source.geolocation__country || 'Unknown'}
+                        ${source.geolocation__isp ? ' · ' + source.geolocation__isp : ''}
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-2">
+                    ${source.count}
+                </span>
+            </div>
+        `).join('');
+    }
+
+    // Initialize
+    initMap();
+    loadThreatData();
+});
+</script>
+{% endblock %}
