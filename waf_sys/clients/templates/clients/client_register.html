@@ -1,0 +1,206 @@
+{% extends 'dashboard/base.html' %}
+{% load custom_filters %}
+{% block title %}Register Your Website - WAF Service{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8">
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            {% for i in total_steps|get_range %}
+            <div class="flex items-center {% if not forloop.last %}flex-1{% endif %}">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center 
+                                {% if forloop.counter < step %}bg-green-500 text-white
+                                {% elif forloop.counter == step %}bg-blue-600 text-white
+                                {% else %}bg-gray-200 text-gray-600{% endif %}">
+                        {% if forloop.counter < step %}
+                        <i class="fas fa-check"></i>
+                        {% else %}
+                        {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+                    <span class="text-sm mt-2 
+                                {% if forloop.counter <= step %}text-blue-600 font-medium
+                                {% else %}text-gray-500{% endif %}">
+                        {% if forloop.counter == 1 %}Website Info{% endif %}
+                        {% if forloop.counter == 2 %}Security Rules{% endif %}
+                        {% if forloop.counter == 3 %}Dashboard{% endif %}
+                    </span>
+                </div>
+                {% if not forloop.last %}
+                <div class="flex-1 h-1 mx-2 
+                            {% if forloop.counter < step %}bg-green-500
+                            {% elif forloop.counter == step %}bg-blue-600
+                            {% else %}bg-gray-200{% endif %}"></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="px-8 py-6 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">Register Your Website</h1>
+            <p class="text-gray-600">Step 1: Tell us about your website</p>
+        </div>
+        
+        <form method="post" class="p-8">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                    <span class="text-red-700">{{ form.non_field_errors }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column - Basic Info -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-globe mr-1"></i>Website Name
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">A descriptive name for your website/application</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.host.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-link mr-1"></i>Domain Name
+                        </label>
+                        {{ form.host }}
+                        {% if form.host.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.host.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">The domain that will point to our WAF (e.g., myapp.com)</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.target_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-server mr-1"></i>Backend Server URL
+                        </label>
+                        {{ form.target_url }}
+                        {% if form.target_url.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.target_url.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Your actual backend server address</p>
+                    </div>
+                </div>
+                
+                <!-- Right Column - Site Details -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="{{ form.site_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tag mr-1"></i>Website Type
+                        </label>
+                        {{ form.site_type }}
+                        {% if form.site_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.site_type.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">What type of website is this?</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.expected_traffic.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-users mr-1"></i>Expected Traffic
+                        </label>
+                        {{ form.expected_traffic }}
+                        {% if form.expected_traffic.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.expected_traffic.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Help us optimize performance</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.site_description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>Website Description
+                        </label>
+                        {{ form.site_description }}
+                        {% if form.site_description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.site_description.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Brief description of your website</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terms Agreement -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="flex items-start">
+                    {{ form.agree_terms }}
+                    <div class="ml-3">
+                        <label for="{{ form.agree_terms.id_for_label }}" class="text-sm font-medium text-gray-700">
+                            I agree to the <a href="#" class="text-blue-600 hover:text-blue-500">Terms of Service</a> 
+                            and <a href="#" class="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                        </label>
+                        {% if form.agree_terms.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.agree_terms.errors }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="mt-8 flex justify-end">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center transition duration-200">
+                    <i class="fas fa-arrow-right mr-2"></i>
+                    Continue to Security Rules
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Help Section -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-blue-800 mb-2">
+            <i class="fas fa-question-circle mr-2"></i>Need Help?
+        </h3>
+        <p class="text-blue-700">After registration, you'll need to update your DNS to point your domain to our WAF service. We'll provide detailed instructions in the next step.</p>
+    </div>
+</div>
+
+<style>
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-checkbox {
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    margin-top: 0.3rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Custom template filter for range -->
+<script>
+// Simple range function for the template
+function getRange(n) {
+    return Array.from({length: n}, (_, i) => i + 1);
+}
+</script>
+{% endblock %}
