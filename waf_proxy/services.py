@@ -1,10 +1,15 @@
 import httpx
+import redis
+import logging
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class DjangoAPIClient:
-    """HTTP client for Django API communication."""
+    """HTTP client with Redis caching support."""
 
     def __init__(self):
         self.base_url = settings.DJANGO_API_URL.rstrip('/')
+        self.redis_client = redis.from_url(settings.REDIS_URL)
         self.timeout = httpx.Timeout(10.0, connect=5.0)
