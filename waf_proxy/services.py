@@ -1,8 +1,10 @@
 import httpx
+from config import settings
 
 
 class DjangoAPIClient:
-    """Basic HTTP client for Django API communication."""
+    """HTTP client for Django API communication."""
 
     def __init__(self):
-        pass
+        self.base_url = settings.DJANGO_API_URL.rstrip('/')
+        self.timeout = httpx.Timeout(10.0, connect=5.0)
