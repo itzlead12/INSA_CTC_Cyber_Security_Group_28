@@ -1,0 +1,681 @@
+{% extends 'dashboard/base.html' %}
+{% load custom_filters %}
+{% load static %}
+{% block title %}{{ client.name }} - Client Dashboard{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ client.name }}</h1>
+            <p class="text-gray-600">Client Security Dashboard</p>
+            <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                <span><strong>Host:</strong> <code class="bg-gray-100 px-2 py-1 rounded">{{ client.host }}</code></span>
+                <span><strong>Target:</strong> <code class="bg-gray-100 px-2 py-1 rounded">{{ client.target_url }}</code></span>
+                <span class="{% if client.is_active %}text-green-600{% else %}text-red-600{% endif %}">
+                    <i class="fas fa-{% if client.is_active %}check-circle{% else %}times-circle{% endif %}"></i>
+                    {{ client.is_active|yesno:"Active,Inactive" }}
+                </span>
+                {% if client.is_onboarded %}
+                <span class="text-green-600">
+                    <i class="fas fa-check-circle"></i> Onboarded
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'clients:client_analytics' client.pk %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-chart-bar mr-2"></i> Analytics
+            </a>
+            <a href="{% url 'clients:client_threats' client.pk %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Threats
+            </a>
+            <a href="{% url 'clients:client_geo_threats' client.pk %}" class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                            <i class="fas fa-list-alt mr-3"></i>
+                            Geo_thraets
+                        </a>
+        </div>
+       
+    </div>
+</div>
+
+<!-- Connection Status -->
+<div class="mb-4">
+    <div id="connection-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+        Connecting...
+    </div>
+</div>
+
+<!-- Progress Steps for Onboarding -->
+{% if not onboarding_complete %}
+<div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+    <div class="flex items-center">
+        <i class="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+        <div>
+            <h3 class="font-semibold text-yellow-800">Setup Incomplete</h3>
+            <p class="text-yellow-700 text-sm">Complete the security configuration to activate WAF protection.</p>
+            <a href="{% url 'clients:client_onboarding' client.pk %}" class="text-yellow-800 hover:text-yellow-900 text-sm font-medium mt-1 inline-block">
+                Complete Setup →
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Client Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                <i class="fas fa-shield-alt text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Threats Blocked</p>
+                <p id="total_blocked" class="text-2xl font-bold text-gray-900">{{ total_blocked }}</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span id="recent_blocked" class="text-sm text-red-600 font-medium">
+                {{ recent_blocked }} in last 24h
+            </span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <i class="fas fa-check-circle text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Requests Allowed</p>
+                <p id="total_allowed" class="text-2xl font-bold text-gray-900">{{ total_allowed }}</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span id="recent_allowed" class="text-sm text-green-600 font-medium">
+                {{ recent_allowed }} in last 24h
+            </span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Requests</p>
+                <p id="total_requests" class="text-2xl font-bold text-gray-900">{{ total_blocked|add:total_allowed }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <i class="fas fa-fire text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Active Rules</p>
+                <p id="total_rules" class="text-2xl font-bold text-gray-900">{{ total_rules }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Rules -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Traffic Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Request Traffic (24h)</h3>
+        <div id="trafficChart" style="height: 300px;"></div>
+    </div>
+
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Threat Distribution (24h)</h3>
+        <div id="threatChart" style="height: 300px;"></div>
+    </div>
+</div>
+
+
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h3 class="text-lg font-semibold mb-4">Active Protection Rules</h3>
+    <div class="space-y-3 max-h-64 overflow-y-auto">
+        {% for client_ruleset in active_rulesets %}
+        <div class="border border-gray-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center">
+                    <span class="{% if client_ruleset.ruleset.ruleset_type == 'owasp' %}text-orange-600{% elif client_ruleset.ruleset.ruleset_type == 'basic' %}text-green-600{% else %}text-blue-600{% endif %}">
+                        <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <span class="ml-2 font-semibold">{{ client_ruleset.ruleset.name }}</span>
+                </div>
+                <span class="text-xs {% if client_ruleset.is_active %}text-green-600{% else %}text-gray-500{% endif %}">
+                    {% with rules_count=client_ruleset.ruleset.rules.count %}
+                    {{ rules_count }} rule{{ rules_count|pluralize }}
+                    {% endwith %}
+                </span>
+            </div>
+            <p class="text-sm text-gray-600 mb-2">{{ client_ruleset.ruleset.description }}</p>
+            <div class="flex justify-between text-xs text-gray-500">
+                <span>Applied: {{ client_ruleset.applied_at|date:"M d, Y" }}</span>
+                <span class="{% if client_ruleset.ruleset.ruleset_type == 'owasp' %}bg-orange-100 text-orange-800{% elif client_ruleset.ruleset.ruleset_type == 'basic' %}bg-green-100 text-green-800{% else %}bg-blue-100 text-blue-800{% endif %} px-2 py-1 rounded">
+                    {{ client_ruleset.ruleset.get_ruleset_type_display }}
+                </span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-8 text-gray-500">
+            <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+            <p>No active rule sets</p>
+            <a href="{% url 'clients:client_onboarding' client.pk %}" class="text-blue-600 hover:text-blue-800 text-sm mt-2 inline-block">
+                Configure rule sets
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+    <a href="{% url 'clients:client_blocking_management' client.pk %}" class="flex items-center p-3 text-gray-700 hover:bg-blue-50 rounded-lg">
+                            <i class="fas fa-list-alt mr-3"></i>
+                            Geo_Blocking
+    </a>
+<div class="bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b">
+        <h3 class="text-lg font-semibold">Recent Security Events</h3>
+        <p class="text-sm text-gray-600">Latest activity for {{ client.name }}</p>
+    </div>
+    <div class="p-4">
+        <div class="space-y-3 max-h-96 overflow-y-auto" id="recentActivity">
+            {% for request in recent_threats %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <span class="{% if request.blocked %}text-red-600{% else %}text-green-600{% endif %}">
+                        <i class="fas fa-{% if request.blocked %}times-circle{% else %}check-circle{% endif %}"></i>
+                    </span>
+                    <span class="font-mono text-sm bg-gray-200 px-2 py-1 rounded">{{ request.ip_address }}</span>
+                    <span class="text-sm">{{ request.request_path|truncatechars:40 }}</span>
+                    <span class="text-sm font-medium">{{ request.method }}</span>
+                    {% if request.blocked %}
+                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">{{ request.reason }}</span>
+                    {% endif %}
+                </div>
+                <div class="text-xs text-gray-500">
+                    {{ request.timestamp|timesince }} ago
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                <p>No security events recorded yet</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- WAF Configuration Info -->
+<div class="mt-8 bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b">
+        <h3 class="text-lg font-semibold">WAF Configuration</h3>
+        <p class="text-sm text-gray-600">Current protection settings</p>
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-2">Security Level</h4>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
+                            {% if client.security_level == 'basic' %}bg-green-100 text-green-800
+                            {% elif client.security_level == 'balanced' %}bg-blue-100 text-blue-800
+                            {% elif client.security_level == 'strict' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ client.get_security_level_display }}
+                </span>
+            </div>
+            <div>
+                <h4 class="font-semibold text-gray-700 mb-2">Features</h4>
+                <div class="space-y-2">
+                    {% if client.enable_ssl %}
+                    <span class="inline-flex items-center text-sm text-green-600">
+                        <i class="fas fa-check-circle mr-1"></i> SSL/TLS Enabled
+                    </span>
+                    {% endif %}
+                    {% if client.enable_rate_limiting %}
+                    <span class="inline-flex items-center text-sm text-green-600">
+                        <i class="fas fa-check-circle mr-1"></i> Rate Limiting Enabled
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'js/apexcharts.js' %}"></script>
+<script>
+// Chart instances
+let trafficChart = null;
+let threatChart = null;
+
+class ClientDashboard {
+    constructor(clientId, wsUrl) {
+        this.clientId = "{{ client.pk }}";
+        this.wsUrl = wsUrl;
+        
+        // DOM elements
+        this.totalBlockedEl = document.getElementById('total_blocked');
+        this.totalAllowedEl = document.getElementById('total_allowed');
+        this.totalRequestsEl = document.getElementById('total_requests');
+        this.totalRulesEl = document.getElementById('total_rules');
+        this.recentBlockedEl = document.getElementById('recent_blocked');
+        this.recentAllowedEl = document.getElementById('recent_allowed');
+        this.feedContainer = document.getElementById('recentActivity');
+        
+        // Initialize with Django template values
+        this.stats = {
+            total_blocked: {{ total_blocked }},
+            total_allowed: {{ total_allowed }},
+            total_requests: {{ total_blocked|add:total_allowed }},
+            total_rules: {{ total_rules }},
+            recent_blocked: {{ recent_blocked }},
+            recent_allowed: {{ recent_allowed }}
+        };
+        
+        this.maxFeedLength = 20;
+        
+        this.initCharts();
+        this.connect();
+    }
+
+    initCharts() {
+        console.log("📊 Initializing charts...");
+        
+        // Initialize Traffic Chart with dual series
+        const trafficEl = document.getElementById('trafficChart');
+        if (trafficEl) {
+            // Create empty arrays for initial data
+            const initialBlockedData = Array(24).fill(0);
+            const initialAllowedData = Array(24).fill(0);
+            
+            trafficChart = new ApexCharts(trafficEl, {
+                chart: { 
+                    type: 'line', 
+                    height: 300, 
+                    animations: { enabled: true },
+                    toolbar: { show: true }
+                },
+                series: [
+                    { 
+                        name: 'Blocked', 
+                        data: initialBlockedData,
+                        color: '#ef4444'
+                    },
+                    { 
+                        name: 'Allowed', 
+                        data: initialAllowedData,
+                        color: '#10b981'
+                    }
+                ],
+                xaxis: { 
+                    type: 'category',
+                    categories: Array.from({length: 24}, (_, i) => `${i}:00`),
+                    title: { text: 'Hour of Day' }
+                },
+                yaxis: { 
+                    title: { text: 'Requests' },
+                    min: 0
+                },
+                stroke: { 
+                    curve: 'smooth', 
+                    width: 3 
+                },
+                markers: { 
+                    size: 4 
+                },
+                legend: { 
+                    position: 'top' 
+                },
+                tooltip: {
+                    shared: true,
+                    intersect: false
+                }
+            });
+            trafficChart.render();
+            console.log("✅ Traffic chart initialized");
+        } else {
+            console.error("❌ Traffic chart element not found");
+        }
+
+        // Initialize Threat Distribution Chart
+        const threatEl = document.getElementById('threatChart');
+        if (threatEl) {
+            threatChart = new ApexCharts(threatEl, {
+                chart: { 
+                    type: 'donut', 
+                    height: 300,
+                    animations: { enabled: true }
+                },
+                series: [{{ recent_blocked }}], // Initial value
+                labels: ['Blocked Threats'],
+                colors: ['#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#06b6d4', '#f97316'],
+                legend: { 
+                    position: 'bottom',
+                    horizontalAlign: 'center'
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total Threats',
+                                    color: '#6b7280',
+                                    formatter: function (w) {
+                                        return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                responsive: [{
+                    breakpoint: 480,
+                    options: {
+                        chart: {
+                            width: 200
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }]
+            });
+            threatChart.render();
+            console.log("✅ Threat chart initialized");
+        } else {
+            console.error("❌ Threat chart element not found");
+        }
+    }
+
+    connect() {
+        const wsUrl = `${this.wsUrl}?client_id=${this.clientId}&type=client`;
+        console.log(`🔄 Connecting to Client WebSocket: ${wsUrl}`);
+        
+        this.ws = new WebSocket(wsUrl);
+
+        this.ws.onopen = () => {
+            console.log("✅ Connected to Client WebSocket");
+            this.updateConnectionStatus(true);
+        };
+
+        this.ws.onmessage = (event) => {
+            try {
+                if (event.data === "pong") {
+                    console.log("🏓 Client connection healthy");
+                    return;
+                }
+                
+                const data = JSON.parse(event.data);
+                console.log("📨 Client received:", data.type, data.dashboard_type);
+                
+                // Only process client dashboard messages
+                if (data.dashboard_type === 'client' || data.type === 'request_event') {
+                    switch(data.type) {
+                        case "dashboard_data":
+                        case "client_dashboard_data":  
+                            this.handleDashboardData(data);
+                            break;
+                        case "request_event":
+                            this.handleRequestEvent(data);
+                            break;
+                        case "status":
+                            console.log("📊 Client status update");
+                            break;
+                        default:
+                            console.log("🔔 Unknown message type:", data.type);
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Error parsing client message:", error, event.data);
+            }
+        };
+
+        this.ws.onclose = () => {
+            console.log("⚠ Client WebSocket disconnected");
+            this.updateConnectionStatus(false);
+            setTimeout(() => this.connect(), 3000);
+        };
+
+        this.ws.onerror = (error) => {
+            console.error("💥 Client WebSocket error:", error);
+            this.updateConnectionStatus(false);
+        };
+    }
+
+    handleDashboardData(data) {
+        console.log("📊 Handling client dashboard data", data);
+        
+        if (data.global_stats) {
+            this.updateGlobalStats(data.global_stats);
+        }
+        
+        if (data.charts_data) {
+            this.updateCharts(data.charts_data);
+        }
+        
+        if (data.recent_activity) {
+            this.updateRecentActivity(data.recent_activity);
+        }
+    }
+
+    handleRequestEvent(data) {
+        console.log("🔄 Handling client request event", data);
+        
+        // Update global stats from the event
+        if (data.global_stats) {
+            this.updateGlobalStats(data.global_stats);
+        }
+        
+        // Update charts with latest data
+        if (data.charts_data) {
+            this.updateCharts(data.charts_data);
+        }
+        
+        // Add to activity feed
+        if (data.request_data) {
+            this.addRequestToFeed(data.request_data);
+        }
+    }
+
+    updateGlobalStats(stats) {
+        console.log("📈 Updating client global stats:", stats);
+        
+        // Update internal state
+        this.stats = { ...this.stats, ...stats };
+        
+        // Update DOM elements with animation
+        this.animateValue(this.totalBlockedEl, stats.total_blocked);
+        this.animateValue(this.totalAllowedEl, stats.total_allowed);
+        this.animateValue(this.totalRequestsEl, stats.total_requests);
+        
+        if (this.totalRulesEl && stats.total_rules) {
+            this.animateValue(this.totalRulesEl, stats.total_rules);
+        }
+        
+        // Update 24h counters
+        if (this.recentBlockedEl) {
+            this.recentBlockedEl.textContent = `${stats.recent_threats || stats.recent_blocked || 0} in last 24h`;
+        }
+        if (this.recentAllowedEl) {
+            this.recentAllowedEl.textContent = `${stats.recent_allowed || 0} in last 24h`;
+        }
+    }
+
+    updateCharts(chartsData) {
+    console.log(" Updating charts with data:", chartsData);
+    
+    
+    if (trafficChart && chartsData.traffic_data) {
+        console.log(" Processing traffic data:", chartsData.traffic_data);
+        
+        const blockedData = Array(24).fill(0);
+        const allowedData = Array(24).fill(0);
+        
+        chartsData.traffic_data.forEach(hourData => {
+            const hour = hourData.hour;
+            blockedData[hour] = hourData.blocked || 0;
+            allowedData[hour] = hourData.allowed || 0;
+        });
+        
+        trafficChart.updateSeries([
+            { 
+                name: 'Blocked', 
+                data: blockedData 
+            },
+            { 
+                name: 'Allowed', 
+                data: allowedData 
+            }
+        ]);
+        console.log(" Traffic chart updated");
+    }
+
+   
+    if (threatChart && chartsData.threat_data) {
+        console.log(" Processing threat data for client:", chartsData.threat_data);
+        
+        const labels = chartsData.threat_data.labels || ['Blocked Threats'];
+        const series = chartsData.threat_data.series || [this.stats.total_blocked || 0];
+        
+        console.log(" Threat labels:", labels);
+        console.log(" Threat series:", series);
+        
+        threatChart.updateOptions({
+            labels: labels
+        });
+        threatChart.updateSeries(series);
+        console.log(" Client threat chart updated");
+    } else {
+        console.warn("⚠ No threat data available for client dashboard");
+    }
+}
+
+    updateRecentActivity(activities) {
+        if (!this.feedContainer) {
+            console.error(" Feed container not found");
+            return;
+        }
+        
+        console.log(" Updating recent activity with:", activities.length, "activities");
+        
+        
+        this.feedContainer.innerHTML = '';
+        
+        
+        if (activities.length > 0) {
+            activities.reverse().forEach(activity => {
+                this.addRequestToFeed(activity, false);
+            });
+        } else {
+            
+            this.feedContainer.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                    <p>No security events recorded yet</p>
+                </div>
+            `;
+        }
+    }
+
+    addRequestToFeed(request, animate = true) {
+        if (!this.feedContainer) return;
+        
+        // Remove empty state if present
+        if (this.feedContainer.querySelector('.text-center')) {
+            this.feedContainer.innerHTML = '';
+        }
+        
+        const div = document.createElement("div");
+        div.className = `flex items-center justify-between p-3 bg-gray-50 rounded-lg ${animate ? 'animate-pulse' : ''}`;
+        
+        if (animate) {
+            setTimeout(() => div.classList.remove("animate-pulse"), 1000);
+        }
+
+        const isBlocked = request.waf_blocked !== undefined ? request.waf_blocked : request.blocked;
+        const threatType = request.threat_type || request.reason || (isBlocked ? 'Blocked' : 'Allowed');
+        const ipAddress = request.client_ip || request.ip_address;
+        const path = request.path || request.request_path;
+        const timestamp = new Date(request.timestamp).toLocaleTimeString();
+        
+        div.innerHTML = `
+            <div class="flex items-center space-x-3 flex-1 min-w-0">
+                <span class="${isBlocked ? 'text-red-600' : 'text-green-600'}">
+                    <i class="fas fa-${isBlocked ? 'times-circle' : 'check-circle'}"></i>
+                </span>
+                <span class="font-mono text-sm bg-gray-200 px-2 py-1 rounded flex-shrink-0">${ipAddress}</span>
+                <span class="text-sm truncate flex-1 min-w-0">${path}</span>
+                <span class="text-sm font-medium flex-shrink-0">${request.method}</span>
+                ${isBlocked ? `<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">${threatType}</span>` : ''}
+            </div>
+            <div class="text-xs text-gray-500 flex-shrink-0">${timestamp}</div>
+        `;
+
+        this.feedContainer.prepend(div);
+
+        // Maintain max feed length
+        while (this.feedContainer.children.length > this.maxFeedLength) {
+            this.feedContainer.removeChild(this.feedContainer.lastChild);
+        }
+    }
+
+    animateValue(element, newValue) {
+        if (!element) return;
+        
+        const current = parseInt(element.textContent) || 0;
+        if (current === newValue) return;
+        
+        const duration = 500;
+        const stepTime = 20;
+        const steps = duration / stepTime;
+        const increment = (newValue - current) / steps;
+        let currentValue = current;
+        
+        const timer = setInterval(() => {
+            currentValue += increment;
+            if ((increment > 0 && currentValue >= newValue) || 
+                (increment < 0 && currentValue <= newValue)) {
+                element.textContent = newValue;
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.round(currentValue);
+            }
+        }, stepTime);
+    }
+
+    updateConnectionStatus(connected) {
+        const statusElement = document.getElementById('connection-status');
+        if (statusElement) {
+            if (connected) {
+                statusElement.innerHTML = '<span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Live';
+                statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+            } else {
+                statusElement.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>Connecting...';
+                statusElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800';
+            }
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("🚀 Initializing Client Dashboard with real-time updates...");
+    const wsBaseUrl = "ws://localhost:8080/ws";
+    window.clientDashboard = new ClientDashboard("{{ client.pk }}", wsBaseUrl);
+});
+</script>
+{% endblock %}
