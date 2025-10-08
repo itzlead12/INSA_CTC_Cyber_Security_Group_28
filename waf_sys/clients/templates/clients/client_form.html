@@ -1,11 +1,150 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="card">
-  <h3>{{ form.instance.pk|yesno:"Edit Client,New Client" }}</h3>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-  </form>
+{% extends 'clients/base_clients.html' %}
+
+{% block clients_title %}{{ title }}{% endblock %}
+{% block clients_subtitle %}Modify client configuration{% endblock %}
+
+{% block clients_actions %}
+<a href="{% url 'clients:client_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200 mr-2">
+    <i class="fas fa-arrow-left mr-2"></i> Back to Clients
+</a>
+{% endblock %}
+
+{% block clients_content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg">
+        <div class="px-8 py-6 border-b border-gray-200">
+            <h1 class="text-2xl font-bold text-gray-800">{{ title }}</h1>
+            <p class="text-gray-600">Update your website configuration</p>
+        </div>
+        
+        <form method="post" class="p-8">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                    <span class="text-red-700">{{ form.non_field_errors }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column - Basic Info -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-globe mr-1"></i>Website Name
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">A descriptive name for your website/application</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.host.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-link mr-1"></i>Domain Name
+                        </label>
+                        {{ form.host }}
+                        {% if form.host.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.host.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">The domain that will point to our WAF (e.g., myapp.com)</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.target_url.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-server mr-1"></i>Backend Server URL
+                        </label>
+                        {{ form.target_url }}
+                        {% if form.target_url.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.target_url.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Your actual backend server address</p>
+                    </div>
+                </div>
+                
+                <!-- Right Column - Site Details -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="{{ form.site_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tag mr-1"></i>Website Type
+                        </label>
+                        {{ form.site_type }}
+                        {% if form.site_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.site_type.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">What type of website is this?</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.expected_traffic.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-users mr-1"></i>Expected Traffic
+                        </label>
+                        {{ form.expected_traffic }}
+                        {% if form.expected_traffic.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.expected_traffic.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Help us optimize performance</p>
+                    </div>
+                    
+                    <div>
+                        <label for="{{ form.site_description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i>Website Description
+                        </label>
+                        {{ form.site_description }}
+                        {% if form.site_description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.site_description.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Brief description of your website</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Note about terms agreement (hidden but we handle it in the view) -->
+            <input type="hidden" name="agree_terms" value="on">
+            
+            <!-- Form Actions -->
+            <div class="mt-8 flex justify-end space-x-4">
+                <a href="{% url 'clients:client_list' %}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200 font-medium">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center transition duration-200">
+                    <i class="fas fa-save mr-2"></i>
+                    Update Client
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-checkbox {
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    margin-top: 0.3rem;
+}
+</style>
 {% endblock %}
