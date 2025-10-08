@@ -1,0 +1,570 @@
+<!-- clients/templates/clients/blocking_management.html -->
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}{{ client.name }} - Blocking Management{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">{{ client.name }} - Blocking Management</h1>
+            <p class="text-gray-600">Manage country blocking and IP blacklisting</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'clients:client_geo_threats' client.pk %}" 
+               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-map mr-2"></i> Threat Map
+            </a>
+            <a href="{% url 'clients:client_dashboard' client.pk %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center transition duration-200">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-red-100 rounded-lg">
+                <i class="fas fa-globe-americas text-red-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Blocked Countries</p>
+                <h3 class="text-2xl font-bold text-gray-900">{{ blocked_countries_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-orange-100 rounded-lg">
+                <i class="fas fa-ban text-orange-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Blocked IPs</p>
+                <h3 class="text-2xl font-bold text-gray-900">{{ client.ip_blacklist|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-purple-100 rounded-lg">
+                <i class="fas fa-shield-alt text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Blocks (30d)</p>
+                <h3 class="text-2xl font-bold text-gray-900">{{ total_blocked_requests }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-green-100 rounded-lg">
+                <i class="fas fa-chart-line text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Status</p>
+                <h3 class="text-lg font-bold text-gray-900">
+                    {% if client.enable_country_blocking or client.enable_ip_blacklist %}Active{% else %}Inactive{% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- World Map -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Blocked Requests by Country</h3>
+        <div id="blockingMap" style="height: 400px; background: #f8fafc; border-radius: 8px;"></div>
+        <p class="text-sm text-gray-500 mt-2">Shows countries where requests were blocked in the last 30 days</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Quick Actions</h3>
+        
+        <!-- Quick IP Block -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Quick Block IP</label>
+            <div class="flex space-x-2">
+                <input type="text" id="quickBlockIp" placeholder="Enter IP address (e.g., 192.168.1.1)" 
+                       class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="quickBlockBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                    <i class="fas fa-ban mr-1"></i> Block
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Block an IP address immediately. Supports CIDR ranges (e.g., 192.168.1.0/24)</p>
+        </div>
+
+        <!-- Statistics -->
+        <div id="quickStats">
+            <div class="text-center py-4">
+                <i class="fas fa-spinner fa-spin text-blue-600"></i>
+                <p class="text-gray-500 mt-2">Loading statistics...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Country Blocking Settings -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">🌐 Country Blocking</h3>
+        
+        <div class="mb-4">
+            <label class="flex items-center">
+                <input type="checkbox" id="enableCountryBlocking" 
+                       {% if client.enable_country_blocking %}checked{% endif %}
+                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="ml-2 text-sm font-medium text-gray-700">Enable Country Blocking</span>
+            </label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Block List Mode -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Blocked Countries</label>
+                <select multiple id="blockedCountries" class="w-full border border-gray-300 rounded-lg p-2 h-48">
+                    {% for code, name in COUNTRIES %}
+                    <option value="{{ code }}" {% if code in client.blocked_countries %}selected{% endif %}>
+                        {{ name }} ({{ code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Hold Ctrl to select multiple countries</p>
+            </div>
+
+            <!-- Allow List Mode -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Allowed Countries (Allow-List)</label>
+                <select multiple id="allowedCountries" class="w-full border border-gray-300 rounded-lg p-2 h-48">
+                    {% for code, name in COUNTRIES %}
+                    <option value="{{ code }}" {% if code in client.allowed_countries %}selected{% endif %}>
+                        {{ name }} ({{ code }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">If set, only these countries can access</p>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button id="saveCountryBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                <i class="fas fa-save mr-1"></i> Save Country Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- IP Blacklisting -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4"> IP Blacklisting</h3>
+        
+        <div class="mb-4">
+            <label class="flex items-center">
+                <input type="checkbox" id="enableIpBlacklist" 
+                       {% if client.enable_ip_blacklist %}checked{% endif %}
+                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="ml-2 text-sm font-medium text-gray-700">Enable IP Blacklisting</span>
+            </label>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Blacklisted IPs & Ranges</label>
+            <textarea id="ipBlacklist" rows="6" class="w-full border border-gray-300 rounded-lg p-3 font-mono text-sm" placeholder="Enter one IP or CIDR range per line&#10;Example:&#10;192.168.1.1&#10;10.0.0.0/24&#10;203.0.113.45">{% for ip in client.ip_blacklist %}{{ ip }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}</textarea>
+            <p class="text-xs text-gray-500 mt-1">One IP address or CIDR range per line</p>
+        </div>
+
+        <!-- Current Blacklisted IPs -->
+        <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Currently Blacklisted IPs</label>
+            <div class="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+                {% if client.ip_blacklist %}
+                    {% for ip in client.ip_blacklist %}
+                    <div class="flex justify-between items-center py-1 px-2 hover:bg-gray-100 rounded">
+                        <span class="font-mono text-sm">{{ ip }}</span>
+                        <button class="removeIpBtn text-red-600 hover:text-red-800 text-xs" data-ip="{{ ip }}">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-gray-500 text-sm">No IPs in blacklist</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button id="saveIpBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                <i class="fas fa-save mr-1"></i> Save IP Settings
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Blocked IPs -->
+<div class="bg-white rounded-lg shadow p-6 mt-6">
+    <h3 class="text-lg font-semibold mb-4"> Recently Blocked IPs (Last 30 Days)</h3>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Block Count</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for ip in top_blocked_ips %}
+                <tr>
+                    <td class="px-4 py-2 font-mono text-sm">{{ ip.ip_address }}</td>
+                    <td class="px-4 py-2 text-sm">
+                        {% if ip.country_code %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                {{ ip.country_code }}
+                            </span>
+                        {% else %}
+                            <span class="text-gray-500">Unknown</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 text-sm">{{ ip.reason|default:"Country/IP Block" }}</td>
+                    <td class="px-4 py-2 text-sm">{{ ip.count }}</td>
+                    <td class="px-4 py-2">
+                        <button class="fillIpBtn text-red-600 hover:text-red-800 text-sm" data-ip="{{ ip.ip_address }}">
+                            <i class="fas fa-ban mr-1"></i> Quick Block
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-4 py-4 text-center text-gray-500">
+                        No blocked IPs in the last 30 days
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+const countryData = {{ country_data|safe }};
+const countryCoords = {{ COUNTRY_COORDS|safe }};
+const clientId = {{ client.pk }};
+let blockingMap;
+
+// Initialize map
+function initMap() {
+    blockingMap = L.map('blockingMap').setView([20, 0], 2);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(blockingMap);
+
+    countryData.forEach(country => {
+        const coords = countryCoords[country.country_code];
+        if (coords && coords.lat && coords.lng) {
+            const circle = L.circleMarker([coords.lat, coords.lng], {
+                color: 'red',
+                fillColor: '#f87171',
+                fillOpacity: 0.6,
+                radius: Math.min(20, Math.max(5, country.blocked_requests / 10))
+            }).addTo(blockingMap);
+            
+            circle.bindPopup(`
+                <div class="p-2">
+                    <h4 class="font-bold">${country.country_code}</h4>
+                    <p>Blocked Requests: ${country.blocked_requests}</p>
+                </div>
+            `);
+        }else {
+        console.warn("No coordinates for country:", country.country_code);
+    }
+    });
+}
+// Get CSRF token properly
+function getCsrfToken() {
+    // Try multiple ways to get the CSRF token
+    let csrfToken = '';
+    
+    // 1. Try from hidden input
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfInput) {
+        csrfToken = csrfInput.value;
+    }
+    
+    // 2. Try from cookie as fallback
+    if (!csrfToken) {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+        if (cookieValue) {
+            csrfToken = cookieValue;
+        }
+    }
+    
+    // 3. Try from meta tag
+    if (!csrfToken) {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            csrfToken = metaTag.getAttribute('content');
+        }
+    }
+    
+    console.log('CSRF Token found:', csrfToken ? 'Yes' : 'No');
+    return csrfToken;
+}
+
+
+async function quickBlockIp() {
+    const ipInput = document.getElementById('quickBlockIp');
+    const ipAddress = ipInput.value.trim();
+    
+    if (!ipAddress) {
+        alert('Please enter an IP address');
+        return;
+    }
+
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+        alert(' Security token missing. Please refresh the page and try again.');
+        return;
+    }
+
+    console.log('Attempting to block IP:', ipAddress);
+
+    try {
+        const response = await fetch(`/clients/api/${clientId}/blocking/quick-block-ip/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                ip_address: ipAddress
+            })
+        });
+
+        console.log('Response status:', response.status);
+
+        if (response.status === 403) {
+            alert(' Permission denied. Please check if you are logged in.');
+            return;
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('suc ' + data.message);
+            ipInput.value = '';
+            location.reload();
+        } else {
+            alert('ero ' + data.error);
+        }
+    } catch (error) {
+        console.error('Block IP error:', error);
+        alert(' Error blocking IP: ' + error.message);
+    }
+}
+
+// Fill quick block input from table
+function fillQuickBlock(ipAddress) {
+    const ipInput = document.getElementById('quickBlockIp');
+    if (ipInput) {
+        ipInput.value = ipAddress;
+        ipInput.focus();
+    }
+}
+
+// Remove IP from blacklist
+async function removeIp(ipAddress) {
+    if (!confirm(`Are you sure you want to remove ${ipAddress} from blacklist?`)) {
+        return;
+    }
+
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+        alert(' Security token missing. Please refresh the page.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/clients/api/${clientId}/blocking/remove-ip/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                ip_address: ipAddress
+            })
+        });
+
+        if (response.status === 403) {
+            alert(' Permission denied.');
+            return;
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('suc' + data.message);
+            location.reload();
+        } else {
+            alert(' ' + data.error);
+        }
+    } catch (error) {
+        alert(' Error removing IP: ' + error);
+    }
+}
+
+
+async function saveBlockingSettings() {
+    const enableCountryBlocking = document.getElementById('enableCountryBlocking').checked;
+    const enableIpBlacklist = document.getElementById('enableIpBlacklist').checked;
+    
+    const blockedCountries = Array.from(document.getElementById('blockedCountries').selectedOptions)
+        .map(option => option.value);
+    
+    const allowedCountries = Array.from(document.getElementById('allowedCountries').selectedOptions)
+        .map(option => option.value);
+    
+    const ipBlacklist = document.getElementById('ipBlacklist').value
+        .split('\n')
+        .map(ip => ip.trim())
+        .filter(ip => ip.length > 0);
+
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+        alert('❌ Security token missing. Please refresh the page.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/clients/api/${clientId}/blocking/settings/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                enable_country_blocking: enableCountryBlocking,
+                blocked_countries: blockedCountries,
+                allowed_countries: allowedCountries,
+                enable_ip_blacklist: enableIpBlacklist,
+                ip_blacklist: ipBlacklist
+            })
+        });
+
+        if (response.status === 403) {
+            alert('❌ Permission denied.');
+            return;
+        }
+
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ ' + data.message);
+        } else {
+            alert('❌ ' + data.error);
+        }
+    } catch (error) {
+        alert('❌ Error saving settings: ' + error);
+    }
+}
+
+// Load statistics (one-time load)
+async function loadStatistics() {
+    try {
+        const response = await fetch(`/clients/api/${clientId}/blocking/stats/`);
+        const data = await response.json();
+        
+        const statsHtml = `
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Blocked this week:</span>
+                    <span class="font-semibold">${data.total_blocked_week}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Top blocking reason:</span>
+                    <span class="font-semibold text-sm">${data.blocking_reasons[0]?.reason || 'None'}</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('quickStats').innerHTML = statsHtml;
+    } catch (error) {
+        document.getElementById('quickStats').innerHTML = `
+            <div class="text-center text-red-600">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p class="text-sm mt-1">Failed to load statistics</p>
+            </div>
+        `;
+    }
+}
+
+// Initialize page with proper event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing blocking management page...');
+    
+    initMap();
+    loadStatistics();
+    
+    // Test CSRF token
+    const csrfToken = getCsrfToken();
+    console.log('CSRF Token available:', csrfToken ? 'Yes' : 'No');
+    
+    // Add event listeners
+    const quickBlockBtn = document.getElementById('quickBlockBtn');
+    const saveCountryBtn = document.getElementById('saveCountryBtn');
+    const saveIpBtn = document.getElementById('saveIpBtn');
+    const quickBlockInput = document.getElementById('quickBlockIp');
+    
+    if (quickBlockBtn) {
+        quickBlockBtn.addEventListener('click', quickBlockIp);
+    }
+    
+    if (saveCountryBtn) {
+        saveCountryBtn.addEventListener('click', saveBlockingSettings);
+    }
+    
+    if (saveIpBtn) {
+        saveIpBtn.addEventListener('click', saveBlockingSettings);
+    }
+    
+   
+    if (quickBlockInput) {
+        quickBlockInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                quickBlockIp();
+            }
+        });
+    }
+    
+  
+    document.querySelectorAll('.fillIpBtn').forEach(button => {
+        button.addEventListener('click', function() {
+            const ipAddress = this.getAttribute('data-ip');
+            fillQuickBlock(ipAddress);
+        });
+    });
+    
+   
+    document.querySelectorAll('.removeIpBtn').forEach(button => {
+        button.addEventListener('click', function() {
+            const ipAddress = this.getAttribute('data-ip');
+            removeIp(ipAddress);
+        });
+    });
+});
+</script>
+{% endblock %}
