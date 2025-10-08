@@ -3,5 +3,8 @@ uvicorn==0.37.0
 requests
 httpx==0.28.1
 redis==6.4.0
+python-multipart==0.0.20
+websockets==15.0.1
+
 
 
