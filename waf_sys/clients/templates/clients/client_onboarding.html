@@ -1,0 +1,195 @@
+{% extends 'dashboard/base.html' %}
+{% load custom_filters %}
+
+{% block title %}Security Configuration - {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8">
+    <!-- Progress Steps -->
+    <div class="mb-8">
+        <div class="flex items-center justify-center">
+            {% for i in total_steps|get_range %}
+            <div class="flex items-center {% if not forloop.last %}flex-1{% endif %}">
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center 
+                                {% if forloop.counter < step %}bg-green-500 text-white
+                                {% elif forloop.counter == step %}bg-blue-600 text-white
+                                {% else %}bg-gray-200 text-gray-600{% endif %}">
+                        {% if forloop.counter < step %}
+                        <i class="fas fa-check"></i>
+                        {% else %}
+                        {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+                    <span class="text-sm mt-2 
+                                {% if forloop.counter <= step %}text-blue-600 font-medium
+                                {% else %}text-gray-500{% endif %}">
+                        {% if forloop.counter == 1 %}Website Info{% endif %}
+                        {% if forloop.counter == 2 %}Security Rules{% endif %}
+                        {% if forloop.counter == 3 %}Dashboard{% endif %}
+                    </span>
+                </div>
+                {% if not forloop.last %}
+                <div class="flex-1 h-1 mx-2 
+                            {% if forloop.counter < step %}bg-green-500
+                            {% elif forloop.counter == step %}bg-blue-600
+                            {% else %}bg-gray-200{% endif %}"></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Configure Security for {{ client.name }}</h1>
+        <p class="text-gray-600">Step 2: Select security rules and protection levels</p>
+        <div class="mt-2 text-sm text-gray-500">
+            <strong>Domain:</strong> {{ client.host }} | 
+            <strong>Type:</strong> {{ client.get_site_type_display }}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Rule Sets Selection -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold">Security Rule Sets</h3>
+                    <p class="text-sm text-gray-600">Choose protection rules for your website</p>
+                </div>
+                
+                <form method="post" class="p-6">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                            <span class="text-red-700">{{ form.non_field_errors }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Security Level -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Security Level</label>
+                        <div class="space-y-3">
+                            {% for choice in form.security_level %}
+                            <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-blue-300 transition duration-200">
+                                <input type="radio" name="security_level" value="{{ choice.data.value }}" 
+                                       {% if choice.data.selected %}checked{% endif %}
+                                       class="mr-3 text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <div class="font-medium text-gray-800">
+                                        {{ choice.choice_label }}
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Rule Sets -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Select Rule Sets</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% for ruleset in form.rulesets.field.queryset %}
+                            <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition duration-200">
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" name="rulesets" value="{{ ruleset.id }}" 
+                                           class="mt-1 mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                           {% if ruleset in form.rulesets.initial %}checked{% endif %}>
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <span class="{% if ruleset.ruleset_type == 'owasp' %}text-orange-600{% elif ruleset.ruleset_type == 'basic' %}text-green-600{% elif ruleset.ruleset_type == 'ecommerce' %}text-purple-600{% else %}text-blue-600{% endif %}">
+                                                <i class="fas fa-shield-alt text-lg"></i>
+                                            </span>
+                                            <span class="ml-2 font-semibold text-gray-800">{{ ruleset.name }}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-3">{{ ruleset.description }}</p>
+                                        
+                                        <div class="flex justify-between text-xs text-gray-500">
+                                            <span><i class="fas fa-rules mr-1"></i>{{ ruleset.rules.count }} rules</span>
+                                            <span class="{% if ruleset.ruleset_type == 'owasp' %}bg-orange-100 text-orange-800{% elif ruleset.ruleset_type == 'basic' %}bg-green-100 text-green-800{% elif ruleset.ruleset_type == 'ecommerce' %}bg-purple-100 text-purple-800{% else %}bg-blue-100 text-blue-800{% endif %} px-2 py-1 rounded">
+                                                {{ ruleset.get_ruleset_type_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            {% empty %}
+                            <div class="col-span-2 text-center py-8 text-gray-500">
+                                <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                                <p>No rule sets available</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" name="enable_ssl" 
+                                   {% if form.enable_ssl.value %}checked{% endif %}
+                                   class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <span class="text-sm font-medium text-gray-700">Enable SSL/TLS</span>
+                                <p class="text-sm text-gray-600">Secure HTTPS connections (recommended)</p>
+                            </div>
+                        </label>
+                        
+                        <label class="flex items-center">
+                            <input type="checkbox" name="enable_rate_limiting"
+                                   {% if form.enable_rate_limiting.value %}checked{% endif %}
+                                   class="mr-3 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <span class="text-sm font-medium text-gray-700">Rate Limiting</span>
+                                <p class="text-sm text-gray-600">Protect against DDoS attacks</p>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="flex justify-between items-center pt-6 border-t border-gray-200">
+                        <a href="{% url 'clients:client_register' %}" class="text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-arrow-left mr-1"></i>Back to Website Info
+                        </a>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold flex items-center transition duration-200">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Apply Security Rules
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div>
+            <div class="bg-white rounded-lg shadow sticky top-6">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold">Configuration Guide</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2">Recommended for {{ client.get_site_type_display }}</h4>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            {% if client.site_type == 'ecommerce' %}
+                            <li>• Basic Protection (essential)</li>
+                            <li>• E-commerce Rules (payment security)</li>
+                            <li>• OWASP Core Rules (comprehensive)</li>
+                            {% elif client.site_type == 'api' %}
+                            <li>• Basic Protection (essential)</li>
+                            <li>• API Protection (API-specific threats)</li>
+                            <li>• OWASP Core Rules (comprehensive)</li>
+                            {% else %}
+                            <li>• Basic Protection (essential)</li>
+                            <li>• OWASP Core Rules (recommended)</li>
+                            <li>• Balanced security level</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
