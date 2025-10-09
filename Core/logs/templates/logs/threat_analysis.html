@@ -1,0 +1,164 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Threat Analysis - WAF{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Threat Analysis</h1>
+    <p class="text-gray-600">Security threat intelligence and analytics</p>
+</div>
+
+<!-- Threat Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Threats (30d)</p>
+                <p class="text-2xl font-bold text-gray-900">{{ total_threats_30d }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                <i class="fas fa-chart-line text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Avg Daily Threats</p>
+                <p class="text-2xl font-bold text-gray-900">{{ avg_daily_threats|floatformat:1 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <i class="fas fa-shield-alt text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Protected Clients</p>
+                <p class="text-2xl font-bold text-gray-900">{{ threats_by_client|length }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Threats by Type -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Threats by Type</h3>
+        <div id="threatsByTypeChart" style="height: 300px;"></div>
+    </div>
+    
+    <!-- Threats by Client -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Threats by Client</h3>
+        <div id="threatsByClientChart" style="height: 300px;"></div>
+    </div>
+</div>
+
+<!-- Daily Threat Trend -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h3 class="text-lg font-semibold mb-4">Daily Threat Trend (30 days)</h3>
+    <div id="dailyThreatChart" style="height: 350px;"></div>
+</div>
+
+<!-- Top Threats Table -->
+<div class="bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h3 class="text-lg font-semibold">Top Threat Patterns</h3>
+        <p class="text-sm text-gray-600">Most common security threats detected</p>
+    </div>
+    <div class="p-6">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Occurrences</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for threat in threats_by_type %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ threat.reason|default:"Unknown" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ threat.count }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            Recent
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Threats by Type Chart
+    const threatsByTypeChart = new ApexCharts(document.querySelector("#threatsByTypeChart"), {
+        series: {{ threats_by_type|length }},
+        chart: { type: 'donut', height: 300 },
+        labels: {{ threats_by_type|safe }}.map(t => t.reason || 'Unknown'),
+        colors: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'],
+        legend: { position: 'bottom' }
+    });
+    threatsByTypeChart.render();
+    
+    // Threats by Client Chart
+    const threatsByClientChart = new ApexCharts(document.querySelector("#threatsByClientChart"), {
+        series: [{
+            data: {{ threats_by_client|safe }}.map(c => c.count)
+        }],
+        chart: { type: 'bar', height: 300 },
+        xaxis: {
+            categories: {{ threats_by_client|safe }}.map(c => c.client__name)
+        },
+        colors: ['#3B82F6'],
+        plotOptions: {
+            bar: { borderRadius: 4 }
+        }
+    });
+    threatsByClientChart.render();
+    
+    // Daily Threat Chart
+    const dailyThreatChart = new ApexCharts(document.querySelector("#dailyThreatChart"), {
+        series: [{
+            name: 'Threats',
+            data: {{ daily_threats|safe }}.map(d => d.count)
+        }],
+        chart: { 
+            type: 'line', 
+            height: 350,
+            toolbar: { show: false }
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        xaxis: {
+            categories: {{ daily_threats|safe }}.map(d => d.date.substring(5)) // Show only month-day
+        },
+        colors: ['#EF4444'],
+        markers: { size: 5 },
+        grid: { borderColor: '#e7e7e7' }
+    });
+    dailyThreatChart.render();
+});
+</script>
+{% endblock %}
