@@ -126,5 +126,28 @@
     </div>
     {% endfor %}
 </div>
+<div class="mt-8 bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b">
+        <h3 class="text-lg font-semibold">Rule Set Types</h3>
+    </div>
+    <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="flex items-center">
+            <span class="text-green-600 mr-2"><i class="fas fa-shield"></i></span>
+            <span class="text-sm"><strong>Basic:</strong> Essential protection for all applications</span>
+        </div>
+        <div class="flex items-center">
+            <span class="text-orange-600 mr-2"><i class="fas fa-shield-alt"></i></span>
+            <span class="text-sm"><strong>OWASP:</strong> Comprehensive web application protection</span>
+        </div>
+        <div class="flex items-center">
+            <span class="text-purple-600 mr-2"><i class="fas fa-shopping-cart"></i></span>
+            <span class="text-sm"><strong>E-commerce:</strong> Specialized for online stores</span>
+        </div>
+        <div class="flex items-center">
+            <span class="text-blue-600 mr-2"><i class="fas fa-fire"></i></span>
+            <span class="text-sm"><strong>Custom:</strong> Tailored for specific needs</span>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
