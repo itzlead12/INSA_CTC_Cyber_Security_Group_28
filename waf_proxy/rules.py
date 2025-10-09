@@ -15,3 +15,11 @@ class WAFResult:
     rule_id: Optional[int] = None
     severity: str = "medium"
     confidence: float = 0.0
+
+class RuleEngine:
+    
+    
+    def __init__(self):
+        self.redis_client = self._initialize_redis()
+        self.compiled_patterns = {}
+        self.rule_cache = {}
