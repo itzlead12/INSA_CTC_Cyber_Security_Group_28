@@ -106,6 +106,19 @@ def ruleset_edit(request, pk):
         'title': f'Edit Rule Set: {ruleset.name}'
     })
 
+@login_required
+@staff_required
+def ruleset_delete(request, pk):
+    ruleset = get_object_or_404(RuleSet, pk=pk)
+    
+    if request.method == 'POST':
+        ruleset_name = ruleset.name
+        ruleset.delete()
+        messages.success(request, f'Rule set "{ruleset_name}" deleted successfully!')
+        return redirect('rules:ruleset_list')
+    
+    return render(request, 'rules/ruleset_confirm_delete.html', {'ruleset': ruleset})
+
 
 @require_GET
 def api_rules(request):
