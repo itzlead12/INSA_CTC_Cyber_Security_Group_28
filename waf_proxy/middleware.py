@@ -825,3 +825,322 @@ class WAFMiddleware:
         # This would typically check Redis or another cache
         # For now, return False to always require reCAPTCHA
         return False
+    
+    def _generate_recaptcha_page(self, client_name: str, client_ip: str) -> str:
+        site_key = "6LeLFNwrAAAAAF16FkDFMk0EcLreFSOFFRVbitIb"  
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Security Verification - {client_name}</title>
+    <script src="https://www.google.com/recaptcha/api.js?render={site_key}"></script>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        
+        body {{ 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+        }}
+        
+        .container {{
+            max-width: 480px;
+            width: 100%;
+            background: white;
+            padding: 40px 35px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }}
+        
+        .container::before {{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        }}
+        
+        .logo {{
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #4f46e5;
+        }}
+        
+        h1 {{
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1f2937;
+        }}
+        
+        .subtitle {{
+            color: #6b7280;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }}
+        
+        .client-info {{
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-left: 4px solid #4f46e5;
+        }}
+        
+        .client-name {{
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }}
+        
+        .client-ip {{
+            color: #6b7280;
+            font-size: 14px;
+        }}
+        
+        .loader {{ 
+            border: 4px solid #f1f5f9; 
+            border-top: 4px solid #4f46e5; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1.5s linear infinite; 
+            margin: 20px auto; 
+            display: none;
+        }}
+        
+        @keyframes spin {{ 
+            0% {{ transform: rotate(0deg); }} 
+            100% {{ transform: rotate(360deg); }} 
+        }}
+        
+        .status {{
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            display: none;
+            font-weight: 500;
+            line-height: 1.5;
+        }}
+        
+        .success {{ 
+            background: #f0fdf4; 
+            color: #166534; 
+            border: 1px solid #bbf7d0; 
+        }}
+        
+        .error {{ 
+            background: #fef2f2; 
+            color: #991b1b; 
+            border: 1px solid #fecaca; 
+        }}
+        
+        .info {{ 
+            background: #eff6ff; 
+            color: #1e40af; 
+            border: 1px solid #dbeafe; 
+        }}
+        
+        .test-section {{
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid #e5e7eb;
+        }}
+        
+        .test-title {{
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4b5563;
+        }}
+        
+        .test-description {{
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }}
+        
+        .bypass-button {{
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        
+        .bypass-button:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(5, 150, 105, 0.3);
+        }}
+        
+        .bypass-button:active {{
+            transform: translateY(0);
+        }}
+        
+        .footer-note {{
+            margin-top: 15px;
+            color: #9ca3af;
+            font-size: 13px;
+        }}
+        
+        .status-icon {{
+            margin-right: 8px;
+            font-size: 18px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🔒</div>
+        <h1>Security Verification Required</h1>
+        <p class="subtitle">We need to confirm you're not a robot to protect our services</p>
+        
+        <div class="client-info">
+            <div class="client-name">{client_name}</div>
+            <div class="client-ip">IP Address: {client_ip}</div>
+        </div>
+        
+        <div class="status info" id="infoStatus">
+            <span class="status-icon">⏳</span> Automatic verification in progress...
+        </div>
+        
+        <div class="loader" id="loader"></div>
+        <div id="status" class="status"></div>
+        
+        <div class="test-section">
+            <div class="test-title">Manual Verification</div>
+            <p class="test-description">If automatic verification fails, you can use this option</p>
+            <button onclick="testRecaptcha()" class="bypass-button">
+               Security Check
+            </button>
+            <p class="footer-note">This will temporarily mark your IP as verified</p>
+        </div>
+    </div>
+
+    <script>
+        const infoStatus = document.getElementById('infoStatus');
+        const loader = document.getElementById('loader');
+        const status = document.getElementById('status');
+        
+        infoStatus.style.display = 'block';
+
+        function showStatus(message, isSuccess) {{
+            status.innerHTML = `<span class="status-icon">${{isSuccess ? '✅' : '❌'}}</span>${{message}}`;
+            status.className = 'status ' + (isSuccess ? 'success' : 'error');
+            status.style.display = 'block';
+            loader.style.display = 'none';
+        }}
+
+        function showLoader() {{
+            loader.style.display = 'block';
+            status.style.display = 'none';
+        }}
+
+        function testRecaptcha() {{
+            showLoader();
+            infoStatus.style.display = 'none';
+            
+            console.log('Testing reCAPTCHA bypass for IP: {client_ip}');
+            
+            fetch('/verify-recaptcha', {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/json'}},
+                body: JSON.stringify({{
+                    token: 'TEST_TOKEN', 
+                    ip: '{client_ip}'
+                }})
+            }}).then(response => {{
+                console.log('Response status:', response.status);
+                if (!response.ok) {{
+                    throw new Error(`HTTP error! status: ${{response.status}}`);
+                }}
+                return response.json();
+            }}).then(data => {{
+                console.log('Response data:', data);
+                
+                if (data.status === 'success') {{
+                    showStatus('Security check passed! Redirecting...', true);
+                    setTimeout(() => {{
+                        window.location.reload();
+                    }}, 1500);
+                }} else {{
+                    showStatus('Failed: ' + (data.error || 'Unknown error'), false);
+                }}
+            }}).catch(error => {{
+                console.error('Request failed:', error);
+                showStatus('Request failed: ' + error.message, false);
+            }});
+        }}
+
+        // Auto-trigger reCAPTCHA on page load
+        document.addEventListener('DOMContentLoaded', function() {{
+            console.log('Initializing reCAPTCHA...');
+            
+            grecaptcha.ready(function() {{
+                console.log('reCAPTCHA ready, executing...');
+                
+                grecaptcha.execute('{site_key}', {{action: 'homepage'}}).then(function(token) {{
+                    console.log('reCAPTCHA token received:', token.substring(0, 20) + '...');
+                    showLoader();
+                    infoStatus.style.display = 'none';
+                    
+                    fetch('/verify-recaptcha', {{
+                        method: 'POST',
+                        headers: {{'Content-Type': 'application/json'}},
+                        body: JSON.stringify({{
+                            token: token, 
+                            ip: '{client_ip}'
+                        }})
+                    }}).then(response => {{
+                        console.log('Auto-verify response status:', response.status);
+                        if (!response.ok) {{
+                            throw new Error(`HTTP error! status: ${{response.status}}`);
+                        }}
+                        return response.json();
+                    }}).then(data => {{
+                        console.log('Auto-verify response:', data);
+                        
+                        if (data.status === 'success') {{
+                            showStatus('Auto-verification successful! Redirecting...', true);
+                            setTimeout(() => {{
+                                window.location.reload();
+                            }}, 1500);
+                        }} else {{
+                            showStatus('Auto-verification failed, please use the manual option', false);
+                        }}
+                    }}).catch(error => {{
+                        console.error('Auto-verify failed:', error);
+                        showStatus('Auto-verification failed, please use the manual option', false);
+                    }});
+                }}).catch(function(error) {{
+                    console.error('reCAPTCHA execution failed:', error);
+                    showStatus('reCAPTCHA initialization failed, please use the manual option', false);
+                }});
+            }});
+        }});
+    </script>
+</body>
+</html>
+"""
