@@ -86,6 +86,25 @@ def ruleset_detail(request, pk):
     }
     return render(request, 'rules/ruleset_detail.html', context)
 
+@login_required
+@staff_required
+def ruleset_edit(request, pk):
+    ruleset = get_object_or_404(RuleSet, pk=pk)
+    
+    if request.method == 'POST':
+        form = RuleSetForm(request.POST, instance=ruleset)
+        if form.is_valid():
+            ruleset = form.save()
+            messages.success(request, f'Rule set "{ruleset.name}" updated successfully!')
+            return redirect('rules:ruleset_detail', pk=ruleset.pk)
+    else:
+        form = RuleSetForm(instance=ruleset)
+    
+    return render(request, 'rules/ruleset_form.html', {
+        'form': form,
+        'ruleset': ruleset,
+        'title': f'Edit Rule Set: {ruleset.name}'
+    })
 
 
 @require_GET
