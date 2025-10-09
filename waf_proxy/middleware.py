@@ -171,3 +171,40 @@ class WAFMiddleware:
                 return WAFResult(blocked=True, reason=f"IP {client_ip} is in blacklisted range {ip_range}")
         
         return WAFResult(blocked=False)
+
+    async def _check_country_blocking(self, client_ip: str, client_config: dict) -> WAFResult:
+        """NEW: Check if country is blocked"""
+        if not client_config.get('enable_country_blocking', False):
+            return WAFResult(blocked=False)
+        
+        # Skip private IPs
+        if self._is_private_ip(client_ip):
+            return WAFResult(blocked=False)
+        
+        # Get geolocation data via API call to Django
+        try:
+            country_data = await self.api_client.get_ip_geolocation(client_ip)
+            
+            if not country_data or 'country_code' not in country_data:
+                return WAFResult(blocked=False)
+            
+            country_code = country_data['country_code']
+            
+            blocked_countries = client_config.get('blocked_countries', [])
+            allowed_countries = client_config.get('allowed_countries', [])
+            
+            # Allow list mode (only allowed countries can access)
+            if allowed_countries:
+                if country_code not in allowed_countries:
+                    return WAFResult(blocked=True, reason=f"Country {country_code} not in allowed list")
+            
+            # Block list mode (block specific countries)
+            elif blocked_countries:
+                if country_code in blocked_countries:
+                    return WAFResult(blocked=True, reason=f"Country {country_code} is blocked")
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            self.logger.error(f"Error checking country blocking: {e}")
+            return WAFResult(blocked=False)
