@@ -8,6 +8,14 @@ from .models import WAFRule, BlockedRequest
 from .forms import WAFRuleForm
 import json
 
+
+from django.contrib.auth.decorators import user_passes_test
+
+def staff_required(view):
+    return user_passes_test(lambda u: u.is_staff)(view)
+
+
+
 @login_required
 def rules_list(request):
     rules = WAFRule.objects.select_related("client").all()
