@@ -382,3 +382,19 @@ class RuleEngine:
         
         self.compiled_patterns.clear()
         self.rule_cache.clear()
+
+# Rule type registry for dynamic rule handling
+RULE_HANDLERS = {
+    'sql_injection': 'SQL Injection',
+    'xss': 'Cross-Site Scripting',
+    'rate_limit': 'Rate Limiting',
+    'path_traversal': 'Path Traversal',
+    'rce': 'Remote Code Execution',
+    'ua_block': 'User Agent Blocking',
+    'lfi': 'Local File Inclusion',
+    'rfi': 'Remote File Inclusion',
+}
+
+def create_rule_engine() -> RuleEngine:
+    """Factory function for creating rule engine instances"""
+    return RuleEngine()
