@@ -374,3 +374,11 @@ class RuleEngine:
         except re.error:
             logger.warning(f"Invalid regex pattern: {pattern}")
             return False
+
+    
+    def cleanup(self):
+        if self.redis_client and hasattr(self.redis_client, "close"):
+            self.redis_client.close()
+        
+        self.compiled_patterns.clear()
+        self.rule_cache.clear()
