@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'clients',
     'rules',
-    'dashboard'
+    'dashboard',
     'logs'
 ]
 
