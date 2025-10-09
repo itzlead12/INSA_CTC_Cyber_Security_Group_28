@@ -194,3 +194,75 @@
         <div id="severityChart" style="height: 250px;"></div>
     </div>
 </div>
+<div class="mt-8 bg-white rounded-lg shadow">
+    <div class="px-6 py-4 border-b">
+        <h3 class="text-lg font-semibold">Export Rule Set</h3>
+    </div>
+    <div class="p-6">
+        <div class="flex space-x-4">
+            <a href=" url 'rules:ruleset_export' ruleset.pk %}?format=json" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center">
+                <i class="fas fa-file-code mr-2"></i>Export as JSON
+            </a>
+            <a href=" url 'rules:ruleset_export' ruleset.pk %}?format=yaml" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center">
+                <i class="fas fa-file-alt mr-2"></i>Export as YAML
+            </a>
+            <a href=" url 'rules:ruleset_export' ruleset.pk %}?format=csv" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded flex items-center">
+                <i class="fas fa-file-csv mr-2"></i>Export as CSV
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ruleTypes = {};
+    {% for rule in rules %}
+    ruleTypes['{{ rule.rule_type }}'] = (ruleTypes['{{ rule.rule_type }}'] || 0) + 1;
+    {% endfor %}
+    
+    const ruleDistributionChart = new ApexCharts(document.querySelector("#ruleDistributionChart"), {
+        series: Object.values(ruleTypes),
+        chart: { type: 'donut', height: 250 },
+        labels: Object.keys(ruleTypes).map(type => {
+            const labels = {
+                'sql_injection': 'SQL Injection',
+                'xss': 'XSS',
+                'rate_limit': 'Rate Limit',
+                'ua_block': 'User Agent',
+                'path_traversal': 'Path Traversal',
+                'rce': 'RCE',
+                'lfi': 'LFI',
+                'rfi': 'RFI'
+            };
+            return labels[type] || type;
+        }),
+        colors: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
+    });
+    ruleDistributionChart.render();
+    
+    const severities = {};
+    {% for rule in rules %}
+    severities['{{ rule.severity }}'] = (severities['{{ rule.severity }}'] || 0) + 1;
+    {% endfor %}
+    
+    const severityChart = new ApexCharts(document.querySelector("#severityChart"), {
+        series: Object.values(severities),
+        chart: { type: 'pie', height: 250 },
+        labels: Object.keys(severities).map(sev => {
+            const labels = {
+                'critical': 'Critical',
+                'high': 'High',
+                'medium': 'Medium',
+                'low': 'Low'
+            };
+            return labels[sev] || sev;
+        }),
+        colors: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6']
+    });
+    severityChart.render();
+});
+</script>
+{% endblock %}
