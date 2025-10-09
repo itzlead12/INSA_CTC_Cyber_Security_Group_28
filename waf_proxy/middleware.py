@@ -24,6 +24,74 @@ class PureWebSocketManager:
         self.last_api_fetch = None
         self.request_timestamps = []
 
+    async def connect(self, websocket: WebSocket, connection_type: str = "admin", client_id: str = None):
+        """Accept and track new WebSocket connection for both admin and client dashboards"""
+        await websocket.accept()
+        
+        connection_info = {
+            'websocket': websocket,
+            'type': connection_type,  # 'admin' or 'client'
+            'client_id': client_id,   # Only for client connections
+            'connected_at': datetime.now()
+        }
+        self.active_connections.append(connection_info)
+        
+        logger.info(f"New {connection_type} WebSocket connection. Total: {len(self.active_connections)}")
+        
+        # Send appropriate dashboard data
+        if connection_type == "admin":
+            await self.send_admin_dashboard_data(websocket)
+        else:
+            await self.send_client_dashboard_data(websocket, client_id)
+
+    def disconnect(self, websocket: WebSocket):
+        """Remove disconnected WebSocket"""
+        for connection_info in self.active_connections:
+            if connection_info['websocket'] == websocket:
+                self.active_connections.remove(connection_info)
+                logger.info(f"WebSocket disconnected. Total: {len(self.active_connections)}")
+                break
+
+    async def send_admin_dashboard_data(self, websocket: WebSocket):
+        """Send admin dashboard data"""
+        try:
+            dashboard_data = await self.fetch_admin_dashboard_data()
+            
+            full_data = {
+                "type": "dashboard_data",
+                "dashboard_type": "admin",
+                "global_stats": dashboard_data.get("global_stats", {}),
+                "charts_data": dashboard_data.get("charts_data", {}),
+                "recent_activity": dashboard_data.get("recent_activity", []),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await websocket.send_text(json.dumps(full_data))
+            logger.info("📊 Sent admin dashboard data to WebSocket client")
+        except Exception as e:
+            logger.error(f"Error sending admin dashboard data: {e}")
+
+    async def send_client_dashboard_data(self, websocket: WebSocket, client_id: str):
+        """Send client dashboard data"""
+        try:
+            client_data = await self.fetch_client_dashboard_data(client_id)
+            
+            client_dashboard_data = {
+                "type": "client_dashboard_data",
+                "dashboard_type": "client",
+                "global_stats": client_data.get("global_stats", {}),
+                "charts_data": client_data.get("charts_data", {}),
+                "recent_activity": client_data.get("recent_activity", []),
+                "client_info": client_data.get("client_info", {}),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            await websocket.send_text(json.dumps(client_dashboard_data))
+            logger.info(f"📊 Sent client dashboard data for client {client_id}")
+        except Exception as e:
+            logger.error(f"Error sending client dashboard data: {e}")
+
+
 class WAFMiddleware:
     """
     Professional WAF Middleware with real-time WebSocket updates to both admin and client dashboards
