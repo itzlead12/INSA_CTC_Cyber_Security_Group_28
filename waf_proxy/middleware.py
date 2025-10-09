@@ -251,3 +251,17 @@ class WAFMiddleware:
             "method": request.method,
             "blocked": True,
         })
+
+    async def _handle_allowed_request(self, request: Request, client_config: dict, 
+                                    client_ip: str, call_next) -> Response:
+        """Handle allowed request"""
+        self.logger.debug(f"Request allowed from {client_ip} to {client_config.get('client_name')}")
+        
+        target_url = client_config.get('target_url')
+        if not target_url:
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'Target URL not configured'}
+            )
+        
+        return await self._forward_to_backend(request, target_url)
