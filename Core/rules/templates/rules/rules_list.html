@@ -147,3 +147,60 @@
             </tbody>
         </table>
     </div>
+    {% if rules.has_other_pages %}
+    <div class="px-6 py-4 border-t border-gray-200">
+        <div class="flex justify-between items-center">
+            <div class="text-sm text-gray-700">
+                Showing {{ rules.start_index }} to {{ rules.end_index }} of {{ rules.paginator.count }} rules
+            </div>
+            <div class="flex space-x-2">
+                {% if rules.has_previous %}
+                <a href="?page={{ rules.previous_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Previous</a>
+                {% endif %}
+                
+                {% for num in rules.paginator.page_range %}
+                    {% if rules.number == num %}
+                    <span class="px-3 py-1 bg-blue-600 text-white rounded">{{ num }}</span>
+                    {% else %}
+                    <a href="?page={{ num }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if rules.has_next %}
+                <a href="?page={{ rules.next_page_number }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRule(ruleId, activate) {
+    const url = `/rules/api/v1/rules/${ruleId}/toggle/`;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({active: activate})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error toggling rule: ' + error);
+    });
+}
+</script>
+{% endblock %}
