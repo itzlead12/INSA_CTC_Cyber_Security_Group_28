@@ -208,3 +208,23 @@ class WAFMiddleware:
         except Exception as e:
             self.logger.error(f"Error checking country blocking: {e}")
             return WAFResult(blocked=False)
+    
+    async def _extract_request_context(self, request: Request, client_ip: str) -> dict:
+        """Extract request context for WAF analysis"""
+        body = ""
+        if request.method in ["POST", "PUT", "PATCH"]:
+            try:
+                body_bytes = await request.body()
+                body = body_bytes.decode('utf-8', errors='ignore')
+            except Exception as e:
+                self.logger.warning(f"Error reading request body: {e}")
+        
+        return {
+            "method": request.method,
+            "path": str(request.url.path),
+            "query_string": str(request.query_params),
+            "headers": dict(request.headers),
+            "body": body,
+            "client_ip": client_ip,  
+            "user_agent": request.headers.get("user-agent", ""),
+        }
