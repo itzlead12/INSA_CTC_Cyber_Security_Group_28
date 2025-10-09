@@ -363,3 +363,14 @@ class RuleEngine:
             patterns.append(html_encoded)
         
         return patterns
+    
+    def _safe_pattern_match(self, pattern: str, data: str) -> bool:
+        try:
+            # Fast path: simple substring search
+            if len(pattern) < 50 and all(c.isalnum() or c in " ._-" for c in pattern):
+                return pattern.lower() in data.lower()
+            # Fallback: regex
+            return bool(re.search(pattern, data, flags=re.IGNORECASE))
+        except re.error:
+            logger.warning(f"Invalid regex pattern: {pattern}")
+            return False
