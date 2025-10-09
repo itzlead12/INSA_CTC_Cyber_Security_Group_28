@@ -16,3 +16,40 @@
                 </div>
             </div>
         </div>
+        <!-- Content -->
+        <div class="p-6">
+            <div class="mb-6">
+                <h4 class="text-lg font-medium text-gray-900 mb-2">You are about to delete:</h4>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h5 class="font-semibold text-gray-900">{{ rule.name }}</h5>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <span class="font-medium">Type:</span> {{ rule.rule_type }}<br>
+                        <span class="font-medium">Severity:</span> 
+                        <span class="{% if rule.severity == 'critical' %}text-red-600
+                                   {% elif rule.severity == 'high' %}text-orange-600
+                                   {% elif rule.severity == 'medium' %}text-yellow-600
+                                   {% else %}text-green-600{% endif %} font-medium">
+                            {{ rule.get_severity_display }}
+                        </span><br>
+                        <span class="font-medium">Status:</span> 
+                        <span class="{% if rule.is_active %}text-green-600{% else %}text-gray-600{% endif %}">
+                            {{ rule.is_active|yesno:"Active,Inactive" }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Warning -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-radiation text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h4 class="text-sm font-medium text-red-800">Warning</h4>
+                        <div class="mt-2 text-sm text-red-700">
+                            <p>This rule is currently protecting your applications. Deleting it may reduce your security coverage.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
