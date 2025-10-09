@@ -322,3 +322,23 @@ class RuleEngine:
             return True  # Fail open
         token = self.redis_client.get(f"recaptcha:{client_ip}")
         return token is not None
+
+
+    def _parse_patterns(self, patterns_value: str) -> List[str]:
+        """Parse patterns from rule value with validation"""
+        try:
+            patterns = [p.strip() for p in patterns_value.split('\n') if p.strip()]
+            
+            # Validate pattern length to prevent DoS
+            valid_patterns = []
+            for pattern in patterns:
+                if 1 <= len(pattern) <= 500:  # Reasonable pattern length limits
+                    valid_patterns.append(pattern)
+                else:
+                    logger.warning(f"Invalid pattern length: {len(pattern)}")
+            
+            return valid_patterns
+            
+        except Exception as e:
+            logger.error(f"Error parsing patterns: {e}")
+            return []
