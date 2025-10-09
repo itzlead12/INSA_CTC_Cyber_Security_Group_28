@@ -168,3 +168,97 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error in SQL injection detection: {e}")
             return WAFResult(blocked=False)
+    
+    def _handle_xss(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """XSS detection with script tag and event handler patterns"""
+        try:
+            patterns = self._parse_patterns(patterns_value)
+            
+            for pattern in patterns:
+                if self._safe_pattern_match(pattern, data):
+                    return WAFResult(
+                        blocked=True,
+                        reason=f"XSS pattern detected: {pattern}",
+                        confidence=0.8
+                    )
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error in XSS detection: {e}")
+            return WAFResult(blocked=False)
+    
+    def _handle_rate_limit(self, config_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        
+        try:
+            if not self.redis_client:
+                return WAFResult(blocked=False) 
+            
+            # Parse rate limit configuration (format: "requests_per_second:max_burst")
+            config_parts = config_value.split(':')
+            if len(config_parts) != 2:
+                logger.warning(f"Invalid rate limit configuration: {config_value}")
+                return WAFResult(blocked=False)
+            
+            try:
+                requests_per_second = float(config_parts[0])
+                max_burst = int(config_parts[1])
+            except ValueError:
+                logger.warning(f"Invalid rate limit values: {config_value}")
+                return WAFResult(blocked=False)
+            
+            # Implement token bucket algorithm
+            redis_key = f"rate_limit:{client_ip}"
+            current_time = self.redis_client.time()[0]  # Get current Unix time
+            
+            # Get current token count
+            token_data = self.redis_client.get(redis_key)
+            if token_data:
+                last_update, tokens = map(float, token_data.decode().split(':'))
+            else:
+                last_update, tokens = current_time, max_burst
+            
+            # Calculate new token count
+            time_passed = current_time - last_update
+            new_tokens = tokens + (time_passed * requests_per_second)
+            tokens = min(new_tokens, max_burst)
+            
+            # Check if request can be processed
+            if tokens >= 1.0:
+                tokens -= 1.0
+                # Update Redis with new token count
+                self.redis_client.setex(
+                    redis_key, 
+                    3600,  # 1 hour TTL
+                    f"{current_time}:{tokens}"
+                )
+                return WAFResult(blocked=False)
+            else:
+                return WAFResult(
+                    blocked=True,
+                    reason=f"Rate limit exceeded for {client_ip}",
+                    confidence=1.0
+                )
+                
+        except Exception as e:
+            logger.error(f"Error in rate limiting: {e}")
+            return WAFResult(blocked=False)  # Fail open
+    
+    def _handle_path_traversal(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """Path traversal attack detection"""
+        try:
+            patterns = self._parse_patterns(patterns_value)
+            
+            for pattern in patterns:
+                if self._safe_pattern_match(pattern, data):
+                    return WAFResult(
+                        blocked=True,
+                        reason=f"Path traversal pattern detected: {pattern}",
+                        confidence=0.7
+                    )
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error in path traversal detection: {e}")
+            return WAFResult(blocked=False)
