@@ -1,7 +1,36 @@
 from django.db import models
-from django.db import models
 from django.utils import timezone
 from customers.models import Client
+from django.db import models 
+from django.contrib.auth.models import User
+
+class RuleSet(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField()
+    is_active = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    RULESET_TYPES = [
+        ('basic', 'Basic Protection'),
+        ('owasp', 'OWASP CRS'),
+        ('custom', 'Custom Rules'),
+        ('ecommerce', 'E-Commerce'),
+        ('api', 'API Protection'),
+    ]
+    ruleset_type = models.CharField(max_length=20, choices=RULESET_TYPES, default='custom')
+    
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Rule Set'
+        verbose_name_plural = 'Rule Sets'
+
+
+
+
 
 class WAFRule(models.Model):
     RULE_TYPES = [
