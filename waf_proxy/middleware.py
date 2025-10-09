@@ -57,3 +57,8 @@ class WAFMiddleware:
         asyncio.create_task(
             self._send_real_time_update(request, client_config, client_ip, waf_result)
         )
+        
+        if waf_result.blocked:
+            return await self._handle_blocked_request(request, waf_result, client_config, client_ip)
+        else:
+            return await self._handle_allowed_request(request, client_config, client_ip, call_next)
