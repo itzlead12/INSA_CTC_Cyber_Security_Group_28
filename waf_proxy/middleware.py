@@ -326,3 +326,15 @@ class WAFMiddleware:
             
         except Exception as e:
             self.logger.error(f"Error sending real-time update: {e}")
+
+    async def _handle_recaptcha(self, config_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """Handle reCAPTCHA challenge for suspicious traffic"""
+        if self._is_recaptcha_solved(client_ip):
+            return WAFResult(blocked=False)
+        return WAFResult(blocked=True, reason="reCAPTCHA required", confidence=0.5)
+
+    def _is_recaptcha_solved(self, client_ip: str) -> bool:
+        """Check if reCAPTCHA was solved recently (TTL: 5 minutes)"""
+        # This would typically check Redis or another cache
+        # For now, return False to always require reCAPTCHA
+        return False
