@@ -80,3 +80,39 @@ class RuleEngine:
                 logger.warning(f"Missing required field in request context: {field}")
                 return False
         return True
+    
+    def _prepare_scan_data(self, request: Dict) -> str:
+        """Prepare and sanitize data for rule scanning — now includes selected headers"""
+        try:
+            path = request.get("path", "")
+            query = unquote_plus(request.get("query_string", ""))
+            body = unquote_plus(request.get("body", ""))
+            
+            # NEW: Include security-relevant headers
+            headers_str = ""
+            headers = request.get("headers", {})
+            for hdr in ["cookie", "referer", "x-forwarded-for", "x-forwarded-host", "origin", "host"]:
+                val = headers.get(hdr, "")
+                if val:
+                    headers_str += " " + unquote_plus(str(val))
+
+            # Combine all parts
+            scan_data = f"{path} {query} {body} {headers_str}".lower()
+            
+            # Limit scan data size to prevent DoS
+            max_scan_size = 10000  # 10KB max
+            if len(scan_data) > max_scan_size:
+                scan_data = scan_data[:max_scan_size]
+                logger.warning("Scan data truncated due to size limits")
+            
+            return scan_data
+            
+        except Exception as e:
+            logger.error(f"Error preparing scan data: {e}")
+            return ""
+    
+    def _prioritize_rules(self, rules: List[Dict]) -> List[Dict]:
+        """Prioritize rules by severity for optimal performance"""
+        severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+        
+        return sorted(rules, key=lambda x: severity_order.get(x.get('severity', 'medium'), 2))
