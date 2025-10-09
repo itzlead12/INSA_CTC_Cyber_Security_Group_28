@@ -1,0 +1,9 @@
+Django==5.2.6
+Djangorestframework == 3.16.1
+pytz
+django-ip-geolocation == 1.6.1
+logger == 1.4
+psycopg2-binary==2.9.10
+gunicorn==23.0.0
+django-crispy-forms==2.4
+crispy-bootstrap5==2025.6
