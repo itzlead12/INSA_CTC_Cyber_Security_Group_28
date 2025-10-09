@@ -140,6 +140,27 @@ def ruleset_import(request):
     
     return render(request, 'rules/ruleset_import.html', {'form': form})
 
+@login_required
+@staff_required
+def rule_create(request, pk):
+    ruleset = get_object_or_404(RuleSet, pk=pk)
+    
+    if request.method == 'POST':
+        form = WAFRuleForm(request.POST)
+        if form.is_valid():
+            rule = form.save(commit=False)
+            rule.ruleset = ruleset
+            rule.save()
+            messages.success(request, f'Rule created successfully!')
+            return redirect('rules:ruleset_detail', pk=ruleset.pk)
+    else:
+        form = WAFRuleForm()
+    
+    return render(request, 'rules/rule_form.html', {
+        'form': form,
+        'ruleset': ruleset,
+        'title': f'Add Rule to {ruleset.name}'
+    })
 
 
 @require_GET
