@@ -96,3 +96,36 @@
             </a>
         </div>
     </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pattern/Value</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for rule in rules %}
+                <tr class="hover:bg-gray-50 transition duration-150">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if rule.rule_type == 'sql_injection' %}bg-red-100 text-red-800
+                                    {% elif rule.rule_type == 'xss' %}bg-orange-100 text-orange-800
+                                    {% elif rule.rule_type == 'rate_limit' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            <i class="fas fa-{% if rule.rule_type == 'sql_injection' %}database
+                                          {% elif rule.rule_type == 'xss' %}code
+                                          {% elif rule.rule_type == 'rate_limit' %}tachometer-alt
+                                          {% else %}shield-alt{% endif %} mr-1"></i>
+                            {{ rule.get_rule_type_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-mono max-w-xs truncate" title="{{ rule.value }}">
+                            {{ rule.value|truncatechars:60 }}
+                        </div>
+                    </td>
