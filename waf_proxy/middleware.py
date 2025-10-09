@@ -299,3 +299,30 @@ class WAFMiddleware:
         except Exception as e:
             self.logger.error(f"Error forwarding request: {e}")
             return Response(content=b"Internal server error", status_code=500)
+
+    async def _send_real_time_update(self, request: Request, client_config: dict, 
+                                   client_ip: str, waf_result: WAFResult):
+        """Send real-time update to WebSocket dashboards"""
+        try:
+            # Prepare request data with client ID for client dashboard targeting
+            request_data = {
+                "client_ip": client_ip,  # This now contains the REAL request sender IP
+                "client_name": client_config.get('client_name', 'unknown'),
+                "client_id": str(client_config.get('id')),  # Convert to string for consistency
+                "client_host": client_config.get('host'),
+                "path": request.url.path,
+                "method": request.method,
+                "user_agent": request.headers.get("user-agent", ""),
+                "waf_blocked": waf_result.blocked,
+                "threat_type": waf_result.reason if waf_result.blocked else "allowed",
+                "timestamp": datetime.now().isoformat(),
+                "rule_id": waf_result.rule_id
+            }
+            
+            self.logger.info(f"📡 Broadcasting real-time update to both dashboards for {request_data['client_name']} from IP {client_ip}")
+            
+            # Broadcast to both admin and relevant client dashboard
+            await self.websocket_manager.broadcast_request_event(request_data)
+            
+        except Exception as e:
+            self.logger.error(f"Error sending real-time update: {e}")
