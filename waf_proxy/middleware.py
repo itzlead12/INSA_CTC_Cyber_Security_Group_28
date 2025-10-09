@@ -367,6 +367,57 @@ class PureWebSocketManager:
         for connection_info in disconnected:
             self.disconnect(connection_info['websocket'])
 
+    async def broadcast_request_event(self, request_data: dict):
+        """Broadcast a new request event to both admin and relevant client dashboards"""
+        try:
+            
+            self.update_request_timestamps()
+            
+            
+            admin_dashboard_data = await self.fetch_admin_dashboard_data()
+            admin_dashboard_data["global_stats"]["requests_per_second"] = self.calculate_current_rps()
+            
+            # Create admin event message
+            admin_event = {
+                "type": "request_event",
+                "dashboard_type": "admin",
+                "request_data": request_data,
+                "global_stats": admin_dashboard_data["global_stats"],
+                "charts_data": admin_dashboard_data["charts_data"],
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            # Broadcast to all admin dashboards
+            await self.broadcast_to_admins(admin_event)
+            
+            # If this request is for a specific client, also broadcast to that client's dashboard
+            client_id = request_data.get('client_id')
+            if client_id:
+                try:
+                    # Fetch client-specific data
+                    client_dashboard_data = await self.fetch_client_dashboard_data(client_id)
+                    client_dashboard_data["global_stats"]["requests_per_second"] = self.calculate_current_rps()
+                    
+                    # Create client event message
+                    client_event = {
+                        "type": "request_event", 
+                        "dashboard_type": "client",
+                        "request_data": request_data,
+                        "global_stats": client_dashboard_data["global_stats"],
+                        "charts_data": client_dashboard_data["charts_data"],
+                        "timestamp": datetime.now().isoformat()
+                    }
+                    
+                    # Broadcast to this specific client's dashboard
+                    await self.broadcast_to_client(client_id, client_event)
+                    
+                except Exception as e:
+                    logger.error(f"Error broadcasting to client {client_id}: {e}")
+            
+            logger.info(f"🔴 Broadcasted real-time event for {request_data['client_ip']} to both dashboards")
+            
+        except Exception as e:
+            logger.error(f"Error broadcasting request event: {e}")
 
 class WAFMiddleware:
     """
