@@ -130,3 +130,26 @@ class WAFMiddleware:
     def _should_skip_waf(self, request: Request) -> bool:
         skip_paths = ['/health', '/metrics', '/docs', '/redoc', '/ws', '/static/','/verify-recaptcha', '/favicon.ico' ]
         return any(request.url.path.startswith(path) for path in skip_paths)
+    
+    async def _analyze_request(self, request: Request, client_config: dict, client_ip: str) -> WAFResult:
+        """Analyze request against WAF rules including country and IP blocking"""
+        try:
+            # NEW: Check IP blacklist first
+            ip_block_result = self._check_ip_blacklist(client_ip, client_config)
+            if ip_block_result.blocked:
+                return ip_block_result
+            
+            # NEW: Check country blocking
+            country_block_result = await self._check_country_blocking(client_ip, client_config)
+            if country_block_result.blocked:
+                return country_block_result
+            
+            # Existing WAF rules check
+            request_context = await self._extract_request_context(request, client_ip)
+            return self.rule_engine.check_request(
+                request_context, 
+                client_config.get("rules", [])
+            )
+        except Exception as e:
+            self.logger.error(f"Error during WAF analysis: {e}")
+            return WAFResult(blocked=False, reason="Analysis error")
