@@ -91,6 +91,41 @@ class PureWebSocketManager:
         except Exception as e:
             logger.error(f"Error sending client dashboard data: {e}")
 
+    async def fetch_admin_dashboard_data(self) -> Dict:
+        """Fetch admin dashboard data from Django API"""
+        try:
+            stats_url = f"{self.api_base_url}/api/stats/"
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(stats_url)
+                response.raise_for_status()
+                api_data = response.json()
+            
+            dashboard_data = self.process_admin_api_data(api_data)
+            self.stats_cache = dashboard_data
+            self.last_api_fetch = datetime.now()
+            
+            return dashboard_data
+            
+        except Exception as e:
+            logger.error(f"Error fetching admin dashboard data: {e}")
+            return self.stats_cache or self.get_admin_fallback_data()
+
+    async def fetch_client_dashboard_data(self, client_id: str) -> Dict:
+        """Fetch client dashboard data from Django API"""
+        try:
+            stats_url = f"{self.api_base_url}/clients/api/{client_id}/stats/"
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                headers = {"X-Internal-Secret": "your-secret-key-123"}
+                response = await client.get(stats_url, headers=headers)
+                response.raise_for_status()
+                api_data = response.json()
+            
+            return self.process_client_api_data(api_data)
+            
+        except Exception as e:
+            logger.error(f"Error fetching client dashboard data for {client_id}: {e}")
+            return self.get_client_fallback_data()
+
 
 class WAFMiddleware:
     """
