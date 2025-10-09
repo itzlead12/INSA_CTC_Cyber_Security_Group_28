@@ -12,6 +12,18 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
+class PureWebSocketManager:
+    """
+    Pure WebSocket manager - broadcasts real-time data to both admin and client dashboards
+    """
+    
+    def __init__(self):
+        self.active_connections = []
+        self.api_base_url = "http://django:8000"
+        self.stats_cache = {}
+        self.last_api_fetch = None
+        self.request_timestamps = []
+
 class WAFMiddleware:
     """
     Professional WAF Middleware with real-time WebSocket updates to both admin and client dashboards
