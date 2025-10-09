@@ -199,6 +199,42 @@ class PureWebSocketManager:
             }
         }
 
+    def prepare_traffic_chart_data(self, requests_by_hour: List[Dict]) -> List[Dict]:
+        """Prepare traffic chart data with 24 hours"""
+        logger.info(f"📊 Preparing traffic chart data: {len(requests_by_hour)} hours")
+    
+        # Ensure we have data for all 24 hours (fill missing hours with zeros)
+        chart_data = []
+        for hour in range(24):
+            # Find data for this hour, or create empty data
+            hour_data = next((item for item in requests_by_hour if item.get('hour') == hour), None)
+            if hour_data:
+                chart_data.append(hour_data)
+            else:
+                chart_data.append({
+                    "hour": hour,
+                    "blocked": 0,
+                    "allowed": 0,
+                    "total": 0
+                })
+        return chart_data
+
+    def prepare_threat_chart_data(self, threat_types: List[Dict]) -> Dict:
+        """Prepare threat distribution chart data"""
+        labels = []
+        series = []
+        
+        for threat in threat_types:
+            reason = threat.get("reason", "Unknown")
+            if not reason or reason == "None":
+                reason = "Other"
+            labels.append(reason)
+            series.append(threat.get("count", 0))
+        
+        return {
+            "labels": labels,
+            "series": series
+        }
 
 
 class WAFMiddleware:
