@@ -1,0 +1,154 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+{% block title %}Admin Dashboard - WAF{% endblock %}
+
+{% block content %}
+
+<!-- Add this to your dashboard template near the top -->
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Security Dashboard</h1>
+    <p class="text-gray-600">Real-time monitoring and threat intelligence</p>
+    <div id="connection-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+        <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+        Connecting...
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100 text-red-600">
+                <i class="fas fa-shield-alt text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Threats Blocked</p>
+                <p id="total_blocked" class="text-2xl font-bold text-gray-900">{{ total_blocked }}</p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span id="recent_threats" class="text-sm text-red-600 font-medium">
+                <i class="fas fa-arrow-up mr-1"></i>
+                {{ recent_threats }} last 24h
+            </span>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <i class="fas fa-check-circle text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Requests Allowed</p>
+                <p id="total_allowed" class="text-2xl font-bold text-gray-900">{{ total_allowed }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <i class="fas fa-server text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Protected Clients</p>
+                <p id="total_clients" class="text-2xl font-bold text-gray-900">{{ total_clients }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <i class="fas fa-fire text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Active Rules</p>
+                <p id="total_rules" class="text-2xl font-bold text-gray-900">{{ total_rules }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Real-time Data -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Traffic Chart -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Request Traffic (Last 24 Hours)</h3>
+        <div id="trafficChart" style="height: 300px;"></div>
+    </div>
+
+    <!-- Threat Distribution -->
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold mb-4">Threat Distribution (Last 24 Hours)</h3>
+        <div id="threatChart" style="height: 300px;"></div>
+    </div>
+</div>
+
+<!-- Real-time Activity -->
+<div class="bg-white rounded-lg shadow">
+    <div class="p-6 border-b">
+        <h3 class="text-lg font-semibold">Real-time Activity</h3>
+        <p class="text-sm text-gray-600">Live request monitoring</p>
+    </div>
+    <div class="p-4">
+        <div id="activityFeed" class="space-y-3 max-h-96 overflow-y-auto">
+            {% for request in recent_requests %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <span class="{% if request.blocked %}text-red-600{% else %}text-green-600{% endif %}">
+                        <i class="fas fa-{% if request.blocked %}times-circle{% else %}check-circle{% endif %}"></i>
+                    </span>
+                    <span class="font-mono text-sm bg-gray-200 px-2 py-1 rounded">{{ request.ip_address }}</span>
+                    <span class="text-sm">{{ request.request_path|truncatechars:50 }}</span>
+                    <span class="text-sm font-medium">{{ request.client.name }}</span>
+                </div>
+                <div class="text-xs text-gray-500">
+                    {{ request.timestamp|timesince }} ago
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <a href="{% url 'clients:client_register' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <i class="fas fa-plus text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-gray-800">Register Client</h3>
+                <p class="text-sm text-gray-600">Add a new client to protect</p>
+            </div>
+        </div>
+    </a>
+    
+    <a href="{% url 'rules:ruleset_list' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                <i class="fas fa-fire text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-gray-800">Manage Rules</h3>
+                <p class="text-sm text-gray-600">Configure security rules</p>
+            </div>
+        </div>
+    </a>
+    
+    <a href="{% url 'logs:request_logs' %}" class="bg-white rounded-lg shadow p-6 hover:shadow-md transition duration-200">
+        <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                <i class="fas fa-list-alt text-xl"></i>
+            </div>
+            <div class="ml-4">
+                <h3 class="font-semibold text-gray-800">View Logs</h3>
+                <p class="text-sm text-gray-600">Security event history</p>
+            </div>
+        </div>
+    </a>
+</div>
+{% endblock %}
+
