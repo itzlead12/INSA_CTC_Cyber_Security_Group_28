@@ -290,3 +290,40 @@ def api_log_blocked_request(request):
         return HttpResponseNotFound("Client not found for logging")
     except Exception as e:
         return HttpResponseBadRequest(f"Error: {e}")
+
+
+
+def import_ruleset_from_file(file, format_type, user):
+    content = file.read().decode('utf-8')
+    
+    if format_type == 'json':
+        data = json.loads(content)
+    elif format_type == 'yaml':
+        #data = yaml.safe_load(content)
+        return None
+    elif format_type == 'csv':
+        csv_data = csv.DictReader(content.splitlines())
+        data = {'rules': list(csv_data)}
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+    
+    with transaction.atomic():
+        ruleset = RuleSet.objects.create(
+            name=data.get('name', f'Imported {file.name}'),
+            description=data.get('description', 'Imported rule set'),
+            ruleset_type=data.get('type', 'custom'),
+            is_public=data.get('is_public', False),
+            created_by=user
+        )
+        
+        for rule_data in data.get('rules', []):
+            WAFRule.objects.create(
+                ruleset=ruleset,
+                rule_type=rule_data.get('rule_type', 'custom'),
+                value=rule_data.get('value', ''),
+                description=rule_data.get('description', ''),
+                severity=rule_data.get('severity', 'medium'),
+                is_active=rule_data.get('is_active', True)
+            )
+    
+    return ruleset
