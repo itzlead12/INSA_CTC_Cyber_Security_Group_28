@@ -236,6 +236,73 @@ class PureWebSocketManager:
             "series": series
         }
 
+    def get_admin_fallback_data(self) -> Dict:
+        """Return fallback data for admin dashboard"""
+        return {
+            "global_stats": {
+                "total_requests": 0,
+                "total_blocked": 0,
+                "total_allowed": 0,
+                "requests_per_second": 0,
+                "total_clients": 1,
+                "total_rules": 3,
+                "recent_threats": 0
+            },
+            "charts_data": {
+                "traffic_data": [],
+                "threat_data": {"labels": [], "series": []},
+                "top_ips": []
+            },
+            "recent_activity": []
+        }
+
+    def get_client_fallback_data(self) -> Dict:
+        """Return fallback data for client dashboard"""
+        return {
+            "global_stats": {
+                "total_requests": 0,
+                "total_blocked": 0,
+                "total_allowed": 0,
+                "requests_per_second": 0,
+                "total_clients": 1,
+                "total_rules": 0,
+                "recent_threats": 0
+            },
+            "charts_data": {
+                "traffic_data": [],
+                "threat_data": {"labels": [], "series": []},
+                "top_ips": []
+            },
+            "recent_activity": [],
+            "client_info": {
+                "name": "Unknown Client"
+            }
+        }
+
+    def update_request_timestamps(self):
+        """Update request timestamps for RPS calculation"""
+        now = datetime.now()
+        self.request_timestamps.append(now)
+        
+        self.request_timestamps = [
+            ts for ts in self.request_timestamps 
+            if (now - ts).total_seconds() < 10
+        ]
+
+    def calculate_current_rps(self) -> float:
+        """Calculate current requests per second based on recent requests"""
+        if not self.request_timestamps:
+            return 0.0
+        
+        now = datetime.now()
+        recent_requests = [
+            ts for ts in self.request_timestamps 
+            if (now - ts).total_seconds() <= 5
+        ]
+        
+        return len(recent_requests) / 5.0
+
+
 
 class WAFMiddleware:
     """
