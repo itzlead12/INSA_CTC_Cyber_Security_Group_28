@@ -61,14 +61,3 @@ class WAFRule(models.Model):
 
 
 
-
-class BlockedRequest(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="blocked_requests")
-    ip_address = models.GenericIPAddressField()
-    request_path = models.TextField()
-    user_agent = models.TextField(blank=True)
-    reason = models.TextField()
-    timestamp = models.DateTimeField(default=timezone.now)
-
-    def __str__(self):
-        return f"[{self.timestamp}] {self.client.name} {self.ip_address} {self.reason}"
