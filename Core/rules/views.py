@@ -266,6 +266,8 @@ def api_rules(request):
 
 
 
+
+
 @csrf_exempt
 @require_POST
 def api_log_blocked_request(request):
@@ -273,12 +275,15 @@ def api_log_blocked_request(request):
         data = json.loads(request.body.decode("utf-8"))
         client_host = data.get("client_host")
         client = Client.objects.get(host=client_host)
-        BlockedRequest.objects.create(
+        
+        RequestLog.objects.create(
             client=client,
-            ip_address=data.get("ip_address","0.0.0.0"),
-            request_path=data.get("request_path",""),
-            user_agent=data.get("user_agent",""),
-            reason=data.get("reason",""),
+            ip_address=data.get("ip_address", "0.0.0.0"),
+            request_path=data.get("request_path", ""),
+            user_agent=data.get("user_agent", ""),
+            method=data.get("method", "GET"),
+            reason=data.get("reason", ""),
+            blocked=data.get("blocked", True),
         )
         return JsonResponse({"status": "ok"})
     except Client.DoesNotExist:
