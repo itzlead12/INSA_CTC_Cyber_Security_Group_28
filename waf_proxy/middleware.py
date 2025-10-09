@@ -265,3 +265,37 @@ class WAFMiddleware:
             )
         
         return await self._forward_to_backend(request, target_url)
+    
+    async def _forward_to_backend(self, request: Request, target_url: str) -> Response:
+        """Forward request to backend service"""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                url = f"{target_url.rstrip('/')}{request.url.path}"
+                if request.url.query:
+                    url += f"?{request.url.query}"
+                
+                headers = dict(request.headers)
+                headers.pop("host", None)
+                headers.pop("content-length", None)
+                
+                if request.method in ["POST", "PUT", "PATCH"]:
+                    body = await request.body()
+                    response = await client.request(
+                        request.method, url, headers=headers, content=body
+                    )
+                else:
+                    response = await client.request(
+                        request.method, url, headers=headers
+                    )
+                
+                return Response(
+                    content=response.content,
+                    status_code=response.status_code,
+                    headers=dict(response.headers)
+                )
+                
+        except httpx.ConnectError:
+            return Response(content=b"Backend service unavailable", status_code=503)
+        except Exception as e:
+            self.logger.error(f"Error forwarding request: {e}")
+            return Response(content=b"Internal server error", status_code=500)
