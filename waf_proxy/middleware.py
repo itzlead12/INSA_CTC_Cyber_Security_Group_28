@@ -22,3 +22,17 @@ class WAFMiddleware:
         self.api_client = DjangoAPIClient()
         self.websocket_manager = websocket_manager
         self.logger = logging.getLogger(__name__)
+    
+    async def process_request(self, request: Request, call_next):
+        """
+        Process incoming request through WAF pipeline with real-time updates to both dashboards
+        """
+        client_host = request.headers.get("host", "").split(':')[0]
+        client_ip = self._get_client_ip(request)
+        
+        self.logger.info(f"Processing request: {request.method} {request.url.path} from {client_ip} to {client_host}")
+        
+        # Skip WAF for health checks and internal endpoints
+        if self._should_skip_waf(request):
+            response = await call_next(request)
+            return response
