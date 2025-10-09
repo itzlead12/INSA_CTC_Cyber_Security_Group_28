@@ -304,3 +304,8 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error in User Agent blocking: {e}")
             return WAFResult(blocked=False)
+    def _handle_lfi(self, patterns_value, data, client_ip, user_agent) -> WAFResult:
+        return self._handle_path_traversal(patterns_value, data, client_ip, user_agent)
+
+    def _handle_rfi(self, patterns_value, data, client_ip, user_agent) -> WAFResult:
+        return self._handle_rce(patterns_value, data, client_ip, user_agent)
