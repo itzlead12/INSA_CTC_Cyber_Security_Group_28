@@ -153,3 +153,21 @@ class WAFMiddleware:
         except Exception as e:
             self.logger.error(f"Error during WAF analysis: {e}")
             return WAFResult(blocked=False, reason="Analysis error")
+
+    def _check_ip_blacklist(self, client_ip: str, client_config: dict) -> WAFResult:
+        """NEW: Check if IP is in blacklist"""
+        if not client_config.get('enable_ip_blacklist', False):
+            return WAFResult(blocked=False)
+        
+        blacklisted_ips = client_config.get('ip_blacklist', [])
+        
+        # Check exact IP match
+        if client_ip in blacklisted_ips:
+            return WAFResult(blocked=True, reason=f"IP {client_ip} is blacklisted")
+        
+        # Check IP range (CIDR) - e.g., "192.168.1.0/24"
+        for ip_range in blacklisted_ips:
+            if '/' in ip_range and self._is_ip_in_range(client_ip, ip_range):
+                return WAFResult(blocked=True, reason=f"IP {client_ip} is in blacklisted range {ip_range}")
+        
+        return WAFResult(blocked=False)
