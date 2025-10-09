@@ -115,3 +115,35 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ rule.created_at|date:"M d, Y" }}
                     </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex space-x-2">
+                            <a href="{% url 'rules:rules_edit' rule.pk %}" 
+                               class="text-blue-600 hover:text-blue-900 transition duration-150"
+                               title="Edit Rule">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'rules:rules_delete' rule.pk %}" 
+                               class="text-red-600 hover:text-red-900 transition duration-150"
+                               title="Delete Rule">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            <button onclick="toggleRule({{ rule.pk }}, {{ rule.is_active|yesno:'false,true' }})"
+                                    class="{% if rule.is_active %}text-yellow-600 hover:text-yellow-900{% else %}text-green-600 hover:text-green-900{% endif %} transition duration-150"
+                                    title="{{ rule.is_active|yesno:'Deactivate,Activate' }} Rule">
+                                <i class="fas fa-{% if rule.is_active %}pause{% else %}play{% endif %}"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-2 text-gray-300"></i>
+                        <p class="text-lg">No rules configured yet</p>
+                        <p class="text-sm">Get started by creating your first security rule</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
