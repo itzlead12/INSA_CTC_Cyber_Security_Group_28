@@ -21,6 +21,7 @@ class RuleSetForm(forms.ModelForm):
         }
 
 
+
 class RuleSetImportForm(forms.Form):
     FORMAT_CHOICES = [
         ('json', 'JSON'),
