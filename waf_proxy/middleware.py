@@ -36,3 +36,16 @@ class WAFMiddleware:
         if self._should_skip_waf(request):
             response = await call_next(request)
             return response
+        
+        # Get client configuration
+        client_config = await self.api_client.get_client_configuration(client_host)
+        
+        if not client_config or client_config.get('error') == 'not_found':
+            self.logger.warning(f"No WAF configuration found for host: {client_host}")
+            return JSONResponse(
+                status_code=404,
+                content={
+                    'error': 'Service not configured',
+                    'detail': f'No WAF configuration found for {client_host}'
+                }
+            )
