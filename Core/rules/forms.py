@@ -88,9 +88,3 @@ class WAFRuleForm(forms.ModelForm):
 
 
 
-
-
-class WAFRuleForm(forms.ModelForm):
-    class Meta:
-        model = WAFRule
-        fields = "__all__"
