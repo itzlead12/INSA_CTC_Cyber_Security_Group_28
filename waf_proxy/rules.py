@@ -262,3 +262,22 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error in path traversal detection: {e}")
             return WAFResult(blocked=False)
+    
+    def _handle_rce(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """Remote Code Execution detection"""
+        try:
+            patterns = self._parse_patterns(patterns_value)
+            
+            for pattern in patterns:
+                if self._safe_pattern_match(pattern, data):
+                    return WAFResult(
+                        blocked=True,
+                        reason=f"RCE pattern detected: {pattern}",
+                        confidence=0.8
+                    )
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error in RCE detection: {e}")
+            return WAFResult(blocked=False)
