@@ -242,16 +242,29 @@ def api_rules(request):
     client_host = request.GET.get("client_host")
     if not client_host:
         return HttpResponseBadRequest("Missing client_host parameter")
+    
     try:
-        client = Client.objects.get(host=client_host)
+        client = Client.objects.get(host=client_host, is_active=True)
     except Client.DoesNotExist:
-        # It's better to return a 404 for security reasons
         return HttpResponseNotFound("Client configuration not found")
-
-    rules = list(
-        WAFRule.objects.filter(client=client, is_active=True).values("rule_type", "value")
+    
+    client_rulesets = ClientRuleSet.objects.filter(
+        client=client, 
+        is_active=True
     )
-    return JsonResponse({"client_name": client.name, "target_url": client.target_url, "rules": rules})
+    
+    rules = WAFRule.objects.filter(
+        ruleset__in=[cr.ruleset for cr in client_rulesets],
+        is_active=True
+    ).values("rule_type", "value")
+    
+    return JsonResponse({
+        "client_name": client.name,
+        "target_url": client.target_url,
+        "rules": list(rules)
+    })
+
+
 
 @csrf_exempt
 @require_POST
