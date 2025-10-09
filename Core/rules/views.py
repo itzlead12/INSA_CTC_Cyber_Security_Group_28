@@ -63,6 +63,30 @@ def ruleset_create(request):
         'title': 'Create New Rule Set'
     })
 
+@login_required
+@staff_required
+def ruleset_detail(request, pk):
+    ruleset = get_object_or_404(RuleSet, pk=pk)
+    rules = ruleset.rules.all().order_by('rule_type', 'severity')
+    
+    rule_stats = rules.aggregate(
+        total=Count('id'),
+        active=Count('id', filter=Q(is_active=True)),
+        critical=Count('id', filter=Q(severity='critical', is_active=True)),
+        high=Count('id', filter=Q(severity='high', is_active=True)),
+    )
+    
+    client_count = ClientRuleSet.objects.filter(ruleset=ruleset, is_active=True).count()
+    
+    context = {
+        'ruleset': ruleset,
+        'rules': rules,
+        'rule_stats': rule_stats,
+        'client_count': client_count,
+    }
+    return render(request, 'rules/ruleset_detail.html', context)
+
+
 
 @require_GET
 def api_rules(request):
