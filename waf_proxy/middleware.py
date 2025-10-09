@@ -126,3 +126,7 @@ class WAFMiddleware:
             return ip_obj in network
         except ValueError:
             return False
+
+    def _should_skip_waf(self, request: Request) -> bool:
+        skip_paths = ['/health', '/metrics', '/docs', '/redoc', '/ws', '/static/','/verify-recaptcha', '/favicon.ico' ]
+        return any(request.url.path.startswith(path) for path in skip_paths)
