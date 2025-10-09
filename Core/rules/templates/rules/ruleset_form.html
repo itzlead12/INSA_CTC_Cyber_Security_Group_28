@@ -28,3 +28,65 @@
             {% endif %}
             
             <div class="space-y-6">
+                <!-- Name -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag mr-1"></i>Rule Set Name
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.name.errors }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500">A descriptive name for this rule set</p>
+                </div>
+                
+                <!-- Description -->
+                <div>
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-align-left mr-1"></i>Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.description.errors }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500">Describe the purpose and coverage of this rule set</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Rule Set Type -->
+                    <div>
+                        <label for="{{ form.ruleset_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-layer-group mr-1"></i>Rule Set Type
+                        </label>
+                        {{ form.ruleset_type }}
+                        {% if form.ruleset_type.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.ruleset_type.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Category for organizing rule sets</p>
+                    </div>
+                    
+                    
+                    <div>
+                        <label class="flex items-center mt-7">
+                            {{ form.is_public }}
+                            <span class="ml-2 text-sm font-medium text-gray-700">Public Rule Set</span>
+                        </label>
+                        {% if form.is_public.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.is_public.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Make this rule set available to all clients</p>
+                    </div>
+                </div>
+                
+                
+                <div>
+                    <label class="flex items-center">
+                        {{ form.is_active }}
+                        <span class="ml-2 text-sm font-medium text-gray-700">Active Rule Set</span>
+                    </label>
+                    {% if form.is_active.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-sm text-gray-500">Whether this rule set should be active and enforceable</p>
+                </div>
+            </div>
