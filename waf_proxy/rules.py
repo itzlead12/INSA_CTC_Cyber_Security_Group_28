@@ -71,3 +71,12 @@ class RuleEngine:
             logger.error(f"Error during WAF analysis: {e}")
             # Fail open - allow request on engine error
             return WAFResult(blocked=False, reason="Engine error")
+    
+    def _validate_request_context(self, request: Dict) -> bool:
+        """Validate request context for security analysis"""
+        required_fields = ['method', 'path', 'client_ip']
+        for field in required_fields:
+            if field not in request or not request[field]:
+                logger.warning(f"Missing required field in request context: {field}")
+                return False
+        return True
