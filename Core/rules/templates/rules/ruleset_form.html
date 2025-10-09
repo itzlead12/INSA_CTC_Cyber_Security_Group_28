@@ -103,3 +103,64 @@
             </div>
         </form>
     </div>
+    <!-- Rule Set Type Guide -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h4 class="text-lg font-semibold text-blue-800 mb-4">
+            <i class="fas fa-info-circle mr-2"></i>Rule Set Type Guide
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-blue-700 flex items-center">
+                    <i class="fas fa-shield text-green-600 mr-2"></i>Basic Protection
+                </h5>
+                <p class="text-sm text-gray-600 mt-1">Essential security rules for all applications. Good starting point.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-blue-700 flex items-center">
+                    <i class="fas fa-shield-alt text-orange-600 mr-2"></i>OWASP Core Rule Set
+                </h5>
+                <p class="text-sm text-gray-600 mt-1">Comprehensive protection against OWASP Top 10 vulnerabilities.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-blue-700 flex items-center">
+                    <i class="fas fa-shopping-cart text-purple-600 mr-2"></i>E-Commerce
+                </h5>
+                <p class="text-sm text-gray-600 mt-1">Specialized rules for online stores and payment processing.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-blue-700 flex items-center">
+                    <i class="fas fa-fire text-blue-600 mr-2"></i>Custom Rules
+                </h5>
+                <p class="text-sm text-gray-600 mt-1">Tailored rules for specific application requirements.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: white;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.form-checkbox {
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+}
+</style>
+{% endblock %}
