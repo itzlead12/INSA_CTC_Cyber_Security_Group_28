@@ -72,7 +72,7 @@ class WAFRuleForm(forms.ModelForm):
         widgets = {
             'rule_type': forms.Select(attrs={'class': 'form-select'}),
             'value': forms.Textarea(attrs={
-                'class': 'form-textarea', 
+                'class': 'form-textarea',
                 'rows': 4,
                 'placeholder': 'Enter one pattern per line'
             }),
@@ -84,6 +84,7 @@ class WAFRuleForm(forms.ModelForm):
             'value': 'Patterns to match (one per line). Use regex for complex patterns.',
             'severity': 'How critical is this rule violation',
         }
+
 
 
 
