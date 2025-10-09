@@ -31,9 +31,18 @@ def my_rulesets(request,pk):
 
 
 @login_required
-def rules_list(request):
-    rules = WAFRule.objects.select_related("client").all()
-    return render(request, "rules_list.html", {"rules": rules})
+@staff_required
+def ruleset_list(request):
+    rulesets = RuleSet.objects.all().prefetch_related('rules').order_by('-created_at')
+    
+    context = {
+        'rulesets': rulesets,
+        'total_rulesets': rulesets.count(),
+        'public_rulesets': rulesets.filter(is_public=True).count(),
+        'active_rulesets': rulesets.filter(is_active=True).count(),
+    }
+    return render(request, 'rules/ruleset_list.html', context)
+
 
 @login_required
 def rules_create(request):
