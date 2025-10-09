@@ -34,5 +34,11 @@
         <i class="fas fa-calendar mr-1"></i>{{ ruleset.created_at|date:"M d, Y" }}
     </span>
 </div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6"> ... Total Rules ... </div>
+    <div class="bg-white rounded-lg shadow p-6"> ... Active Rules ... </div>
+    <div class="bg-white rounded-lg shadow p-6"> ... Critical Rules ... </div>
+    <div class="bg-white rounded-lg shadow p-6"> ... Client Usage ... </div>
+</div>
 
 {% endblock %}
