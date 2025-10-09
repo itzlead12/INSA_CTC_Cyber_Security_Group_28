@@ -23,3 +23,14 @@ class RuleEngine:
         self.redis_client = self._initialize_redis()
         self.compiled_patterns = {}
         self.rule_cache = {}
+        
+    def _initialize_redis(self) -> Optional[redis.Redis]:
+        """Initialize Redis connection with proper error handling"""
+        try:
+            client = redis.from_url(settings.REDIS_URL)
+            client.ping()
+            logger.info(" Redis connected successfully")
+            return client
+        except Exception as e:
+            logger.error(f" Redis connection failed: {e}")
+            return None
