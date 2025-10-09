@@ -342,3 +342,24 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error parsing patterns: {e}")
             return []
+    
+    def _generate_test_patterns(self, pattern: str) -> List[str]:
+        """Generate multiple encoding variations for pattern testing"""
+        patterns = [pattern]
+        
+        # URL encoding variations
+        url_encoded = pattern.replace("'", "%27").replace(" ", "%20").replace("=", "%3D")
+        if url_encoded != pattern:
+            patterns.append(url_encoded)
+        
+        # Double encoding
+        double_encoded = url_encoded.replace("%", "%25")
+        if double_encoded != url_encoded:
+            patterns.append(double_encoded)
+        
+        # HTML entity variations
+        html_encoded = pattern.replace("<", "<").replace(">", ">")
+        if html_encoded != pattern:
+            patterns.append(html_encoded)
+        
+        return patterns
