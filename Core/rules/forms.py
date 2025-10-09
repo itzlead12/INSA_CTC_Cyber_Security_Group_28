@@ -51,17 +51,9 @@ class RuleSetExportForm(forms.Form):
         ('yaml', 'YAML'),
         ('csv', 'CSV'),
     ]
-    
-    format = forms.ChoiceField(
-        choices=FORMAT_CHOICES,
-        initial='json',
-        widget=forms.RadioSelect
-    )
-    include_inactive = forms.BooleanField(
-        required=False,
-        initial=False,
-        help_text='Include inactive rules in export'
-    )
+    format = forms.ChoiceField(choices=FORMAT_CHOICES, initial='json', widget=forms.RadioSelect)
+    include_inactive = forms.BooleanField(required=False, initial=False, help_text='Include inactive rules in export')
+
 
 
 
