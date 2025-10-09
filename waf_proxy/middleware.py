@@ -228,3 +228,26 @@ class WAFMiddleware:
             "client_ip": client_ip,  
             "user_agent": request.headers.get("user-agent", ""),
         }
+
+    async def _handle_blocked_request(self, request: Request, waf_result: WAFResult, 
+                                client_config: dict, client_ip: str) -> Response:
+        self.logger.warning(f"Request blocked: {waf_result.reason} for {client_ip}")
+    
+        # Log the event
+        country_code = ""
+        try:
+            country_data = await self.api_client.get_ip_geolocation(client_ip)
+            country_code = country_data.get('country_code', '') if country_data else ""
+        except Exception as e:
+            self.logger.error(f"Error getting geolocation for logging: {e}")
+    
+        await self.api_client.log_security_event({
+            "client_host": request.headers.get("host", ""),
+            "ip_address": client_ip,
+            "country_code": country_code,
+            "request_path": request.url.path,
+            "user_agent": request.headers.get("user-agent", ""),
+            "reason": waf_result.reason,
+            "method": request.method,
+            "blocked": True,
+        })
