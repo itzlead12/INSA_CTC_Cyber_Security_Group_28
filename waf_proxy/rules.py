@@ -281,3 +281,26 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error in RCE detection: {e}")
             return WAFResult(blocked=False)
+    
+    def _handle_ua_block(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """User Agent blocking"""
+        try:
+            if not user_agent:
+                return WAFResult(blocked=False)
+            
+            patterns = self._parse_patterns(patterns_value)
+            user_agent_lower = user_agent.lower()
+            
+            for pattern in patterns:
+                if pattern.lower() in user_agent_lower:
+                    return WAFResult(
+                        blocked=True,
+                        reason=f"Blocked User Agent: {pattern}",
+                        confidence=0.9
+                    )
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error in User Agent blocking: {e}")
+            return WAFResult(blocked=False)
