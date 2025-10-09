@@ -90,3 +90,16 @@
                     <p class="mt-1 text-sm text-gray-500">Whether this rule set should be active and enforceable</p>
                 </div>
             </div>
+            <!-- Form Actions -->
+            <div class="mt-8 flex justify-end space-x-4">
+                <a href="{% if ruleset %}{% url 'rules:ruleset_detail' ruleset.pk %}{% else %}{% url 'rules:ruleset_list' %}{% endif %}" 
+                   class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition duration-200">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 flex items-center">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if ruleset %}Update Rule Set{% else %}Create Rule Set{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
