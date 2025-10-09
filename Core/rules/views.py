@@ -119,6 +119,28 @@ def ruleset_delete(request, pk):
     
     return render(request, 'rules/ruleset_confirm_delete.html', {'ruleset': ruleset})
 
+@login_required
+@staff_required
+def ruleset_import(request):
+    if request.method == 'POST':
+        form = RuleSetImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                ruleset = import_ruleset_from_file(
+                    request.FILES['file'],
+                    form.cleaned_data['format'],
+                    request.user
+                )
+                messages.success(request, f'Rule set "{ruleset.name}" imported successfully!')
+                return redirect('rules:ruleset_detail', pk=ruleset.pk)
+            except Exception as e:
+                messages.error(request, f'Error importing rule set: {str(e)}')
+    else:
+        form = RuleSetImportForm()
+    
+    return render(request, 'rules/ruleset_import.html', {'form': form})
+
+
 
 @require_GET
 def api_rules(request):
