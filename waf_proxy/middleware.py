@@ -126,6 +126,80 @@ class PureWebSocketManager:
             logger.error(f"Error fetching client dashboard data for {client_id}: {e}")
             return self.get_client_fallback_data()
 
+    def process_admin_api_data(self, api_data: Dict) -> Dict:
+        """Process admin API data into dashboard format"""
+        global_stats = api_data.get("global_stats", {})
+        charts_data = api_data.get("charts_data", {})
+        recent_activity = api_data.get("recent_activity", [])
+
+        # FIX: Use prepare_traffic_chart_data to ensure 24 hours of data
+        requests_by_hour = charts_data.get("requests_by_hour", [])
+        traffic_chart_data = self.prepare_traffic_chart_data(requests_by_hour)
+    
+        # Admin threat data uses "threat_types" format
+        threat_types = charts_data.get("threat_types", [])
+        threat_chart_data = {
+            "labels": [t.get('reason', 'Unknown') for t in threat_types],
+            "series": [t.get('count', 0) for t in threat_types]
+        }
+
+        logger.info(f"📊 Admin API - Traffic: {len(traffic_chart_data)} hours, Threats: {len(threat_types)} types")
+
+        return {
+            "global_stats": {
+                "total_requests": global_stats.get("total_requests", 0),
+                "total_blocked": global_stats.get("total_blocked", 0),
+                "total_allowed": global_stats.get("total_allowed", 0),
+                "requests_per_second": self.calculate_current_rps(),
+                "total_clients": global_stats.get("total_clients", 0),
+                "total_rules": global_stats.get("total_rules", 0),
+                "recent_threats": global_stats.get("recent_threats", 0)
+            },
+            "charts_data": {
+                "traffic_data": traffic_chart_data,
+                "threat_data": threat_chart_data,
+                "top_ips": charts_data.get("top_blocked_ips", [])
+            },
+            "recent_activity": recent_activity
+        }
+
+    def process_client_api_data(self, api_data: Dict) -> Dict:
+        """Process client API data into dashboard format"""
+        global_stats = api_data.get("global_stats", {})
+        charts_data = api_data.get("charts_data", {})
+        recent_activity = api_data.get("recent_activity", [])
+
+        # FIX: Use prepare_traffic_chart_data for client data too
+        traffic_data = charts_data.get("traffic_data", [])
+        traffic_chart_data = self.prepare_traffic_chart_data(traffic_data)
+    
+        # Client threat data is already in the right format
+        threat_chart_data = charts_data.get("threat_data", {"labels": [], "series": []})
+
+        logger.info(f"📊 Client API - Traffic: {len(traffic_chart_data)} hours, Threats: {len(threat_chart_data.get('labels', []))} types")
+
+        return {
+            "global_stats": {
+                "total_requests": global_stats.get("total_requests", 0),
+                "total_blocked": global_stats.get("total_blocked", 0),
+                "total_allowed": global_stats.get("total_allowed", 0),
+                "requests_per_second": self.calculate_current_rps(),
+                "total_clients": 1,
+                "total_rules": global_stats.get("total_rules", 0),
+                "recent_threats": global_stats.get("recent_threats", 0)
+            },
+            "charts_data": {
+                "traffic_data": traffic_chart_data,
+                "threat_data": threat_chart_data,
+                "top_ips": charts_data.get("top_ips", [])
+            },
+            "recent_activity": recent_activity,
+            "client_info": {
+                "name": api_data.get("client_name", "Unknown Client")
+            }
+        }
+
+
 
 class WAFMiddleware:
     """
