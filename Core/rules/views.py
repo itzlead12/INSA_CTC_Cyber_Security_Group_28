@@ -14,6 +14,20 @@ from django.contrib.auth.decorators import user_passes_test
 def staff_required(view):
     return user_passes_test(lambda u: u.is_staff)(view)
 
+def my_rulesets(request,pk):
+    client = Client.objects.get(pk=pk, is_active=True)
+    client_rulesets = ClientRuleSet.objects.filter(
+        client=client, 
+        is_active=True
+    ).select_related('ruleset')
+    
+    context = {
+        'rulesets': client_rulesets,
+        'total_rulesets': client_rulesets.count(),
+        'public_rulesets': client_rulesets.filter(is_public=True).count(),
+        'active_rulesets': client_rulesets.filter(is_active=True).count(),
+    }
+    return render(request, 'templates/rules/my_ruleset.html', context)
 
 
 @login_required
