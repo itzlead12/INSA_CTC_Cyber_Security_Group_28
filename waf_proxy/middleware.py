@@ -98,3 +98,31 @@ class WAFMiddleware:
         direct_ip = request.client.host if request.client else "0.0.0.0"
         self.logger.info(f"Using direct connection IP: {direct_ip}")
         return direct_ip
+
+    def _is_valid_ip(self, ip: str) -> bool:
+        """Validate IP address format"""
+        import ipaddress
+        try:
+            ipaddress.ip_address(ip)
+            return True
+        except ValueError:
+            return False
+
+    def _is_private_ip(self, ip: str) -> bool:
+        """Check if IP is private/internal"""
+        import ipaddress
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local
+        except ValueError:
+            return False
+
+    def _is_ip_in_range(self, ip: str, ip_range: str) -> bool:
+        """Check if IP is in CIDR range"""
+        import ipaddress
+        try:
+            network = ipaddress.ip_network(ip_range, strict=False)
+            ip_obj = ipaddress.ip_address(ip)
+            return ip_obj in network
+        except ValueError:
+            return False
