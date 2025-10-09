@@ -112,3 +112,46 @@
             </div>
         </form>
     </div>
+    <!-- Rule Type Examples -->
+    <div id="rule-examples" class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6 hidden">
+        <h4 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-lightbulb mr-2"></i>Rule Pattern Examples
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-red-600">SQL Injection</h5>
+                <div class="text-xs font-mono bg-gray-100 p-2 rounded mt-2">
+                    ' OR '1'='1<br>
+                    ' OR 1=1--<br>
+                    UNION SELECT<br>
+                    DROP TABLE
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-orange-600">XSS</h5>
+                <div class="text-xs font-mono bg-gray-100 p-2 rounded mt-2">
+                    &lt;script&gt;alert<br>
+                    javascript:<br>
+                    onload=<br>
+                    &lt;img src=x onerror=
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-blue-600">Rate Limiting</h5>
+                <div class="text-xs font-mono bg-gray-100 p-2 rounded mt-2">
+                    10/60<br>
+                    100/3600<br>
+                    50/300
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg">
+                <h5 class="font-semibold text-purple-600">Path Traversal</h5>
+                <div class="text-xs font-mono bg-gray-100 p-2 rounded mt-2">
+                    ../../etc/passwd<br>
+                    ..\\windows\\system32<br>
+                    %2e%2e%2f
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
