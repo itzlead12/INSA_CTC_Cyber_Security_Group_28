@@ -200,6 +200,44 @@ def rule_delete(request, pk):
 
 
 @require_GET
+def api_client_rulesets(request):
+    client_host = request.GET.get("client_host")
+    if not client_host:
+        return HttpResponseBadRequest("Missing client_host parameter")
+    
+    try:
+        client = Client.objects.get(host=client_host, is_active=True)
+    except Client.DoesNotExist:
+        return HttpResponseNotFound("Client configuration not found")
+    
+    client_rulesets = ClientRuleSet.objects.filter(
+        client=client, 
+        is_active=True
+    ).select_related('ruleset')
+    
+    rulesets_data = []
+    for client_ruleset in client_rulesets:
+        ruleset = client_ruleset.ruleset
+        rules = WAFRule.objects.filter(
+            ruleset=ruleset, 
+            is_active=True
+        ).values('id', 'rule_type', 'value', 'severity', 'description')
+        
+        rulesets_data.append({
+            'id': ruleset.id,
+            'name': ruleset.name,
+            'type': ruleset.ruleset_type,
+            'rules': list(rules)
+        })
+    
+    return JsonResponse({
+        'client_name': client.name,
+        'target_url': client.target_url,
+        'rulesets': rulesets_data
+    })
+
+
+@require_GET
 def api_rules(request):
     client_host = request.GET.get("client_host")
     if not client_host:
