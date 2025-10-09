@@ -163,6 +163,28 @@ def rule_create(request, pk):
     })
 
 
+@login_required
+@staff_required
+def rule_edit(request, pk):
+    rule = get_object_or_404(WAFRule, pk=pk)
+    
+    if request.method == 'POST':
+        form = WAFRuleForm(request.POST, instance=rule)
+        if form.is_valid():
+            rule = form.save()
+            messages.success(request, f'Rule updated successfully!')
+            return redirect('rules:ruleset_detail', pk=rule.ruleset.pk)
+    else:
+        form = WAFRuleForm(instance=rule)
+    
+    return render(request, 'rules/rule_form.html', {
+        'form': form,
+        'rule': rule,
+        'ruleset': rule.ruleset,
+        'title': f'Edit Rule in {rule.ruleset.name}'
+    })
+
+
 @require_GET
 def api_rules(request):
     client_host = request.GET.get("client_host")
