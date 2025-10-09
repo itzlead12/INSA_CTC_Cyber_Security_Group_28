@@ -45,15 +45,24 @@ def ruleset_list(request):
 
 
 @login_required
-def rules_create(request):
-    if request.method == "POST":
-        form = WAFRuleForm(request.POST)
+@staff_required
+def ruleset_create(request):
+    if request.method == 'POST':
+        form = RuleSetForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect("rules:rules_list")
+            ruleset = form.save(commit=False)
+            ruleset.created_by = request.user
+            ruleset.save()
+            messages.success(request, f'Rule set "{ruleset.name}" created successfully!')
+            return redirect('rules:ruleset_detail', pk=ruleset.pk)
     else:
-        form = WAFRuleForm()
-    return render(request, "rules_create.html", {"form": form})
+        form = RuleSetForm()
+    
+    return render(request, 'rules/ruleset_form.html', {
+        'form': form,
+        'title': 'Create New Rule Set'
+    })
+
 
 @require_GET
 def api_rules(request):
