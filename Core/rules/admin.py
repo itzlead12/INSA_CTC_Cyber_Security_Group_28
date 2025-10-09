@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import WAFRule,RuleSet
 
-# Register your models here.
+admin.site.register(WAFRule)
+admin.site.register(RuleSet)
