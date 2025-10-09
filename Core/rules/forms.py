@@ -44,6 +44,25 @@ class RuleSetImportForm(forms.Form):
     )
 
 
+class RuleSetExportForm(forms.Form):
+    FORMAT_CHOICES = [
+        ('json', 'JSON'),
+        ('yaml', 'YAML'),
+        ('csv', 'CSV'),
+    ]
+    
+    format = forms.ChoiceField(
+        choices=FORMAT_CHOICES,
+        initial='json',
+        widget=forms.RadioSelect
+    )
+    include_inactive = forms.BooleanField(
+        required=False,
+        initial=False,
+        help_text='Include inactive rules in export'
+    )
+
+
 
 class WAFRuleForm(forms.ModelForm):
     class Meta:
