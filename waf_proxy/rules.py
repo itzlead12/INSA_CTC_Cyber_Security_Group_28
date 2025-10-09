@@ -309,3 +309,16 @@ class RuleEngine:
 
     def _handle_rfi(self, patterns_value, data, client_ip, user_agent) -> WAFResult:
         return self._handle_rce(patterns_value, data, client_ip, user_agent)
+    
+    def _handle_recaptcha(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        
+        if self._is_recaptcha_solved(client_ip):
+            return WAFResult(blocked=False)
+        return WAFResult(blocked=True, reason="reCAPTCHA required", confidence=0.5)
+
+    def _is_recaptcha_solved(self, client_ip: str) -> bool:
+        """Check if reCAPTCHA was solved recently (TTL: 5 minutes)"""
+        if not self.redis_client:
+            return True  # Fail open
+        token = self.redis_client.get(f"recaptcha:{client_ip}")
+        return token is not None
