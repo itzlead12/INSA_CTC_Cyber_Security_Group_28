@@ -69,5 +69,21 @@
         </div>
     </div>
 </div>
+<!-- Rule Sets Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for ruleset in rulesets %} 
+    <div class="bg-white rounded-lg shadow hover:shadow-md transition duration-200">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <span class="{% if ruleset.ruleset_type == 'owasp' %}text-orange-600{% elif ruleset.ruleset_type == 'basic' %}text-green-600{% elif ruleset.ruleset_type == 'ecommerce' %}text-purple-600{% else %}text-blue-600{% endif %}">
+                        <i class="fas fa-{% if ruleset.ruleset_type == 'owasp' %}shield-alt{% elif ruleset.ruleset_type == 'basic' %}shield{% elif ruleset.ruleset_type == 'ecommerce' %}shopping-cart{% else %}fire{% endif %} text-2xl"></i>
+                    </span>
+                    <span class="ml-3 font-semibold text-gray-800">{{ ruleset.name }}</span>
+                </div>
+                <span class="{% if ruleset.is_active %}text-green-600{% else %}text-gray-400{% endif %}">
+                    <i class="fas fa-{% if ruleset.is_active %}toggle-on{% else %}toggle-off{% endif %}"></i>
+                </span>
+            </div>
 
 {% endblock %}
