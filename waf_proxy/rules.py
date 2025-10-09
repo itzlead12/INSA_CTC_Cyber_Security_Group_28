@@ -142,3 +142,29 @@ class RuleEngine:
         except Exception as e:
             logger.error(f"Error applying rule {rule.get('id')}: {e}")
             return WAFResult(blocked=False)
+    
+    def _handle_sql_injection(self, patterns_value: str, data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """SQL Injection detection with pattern matching"""
+        try:
+            patterns = self._parse_patterns(patterns_value)
+            
+            for pattern in patterns:
+                if not pattern:
+                    continue
+                
+                # Test multiple encodings
+                test_patterns = self._generate_test_patterns(pattern)
+                
+                for test_pattern in test_patterns:
+                    if self._safe_pattern_match(test_pattern, data):
+                        return WAFResult(
+                            blocked=True, 
+                            reason=f"SQL Injection pattern detected: {pattern}",
+                            confidence=0.9
+                        )
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error in SQL injection detection: {e}")
+            return WAFResult(blocked=False)
