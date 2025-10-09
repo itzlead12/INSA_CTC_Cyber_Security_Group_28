@@ -185,6 +185,20 @@ def rule_edit(request, pk):
     })
 
 
+@login_required
+@staff_required
+def rule_delete(request, pk):
+    rule = get_object_or_404(WAFRule, pk=pk)
+    ruleset = rule.ruleset
+    
+    if request.method == 'POST':
+        rule.delete()
+        messages.success(request, 'Rule deleted successfully!')
+        return redirect('rules:ruleset_detail', pk=ruleset.pk)
+    
+    return render(request, 'rules/rule_confirm_delete.html', {'rule': rule})
+
+
 @require_GET
 def api_rules(request):
     client_host = request.GET.get("client_host")
