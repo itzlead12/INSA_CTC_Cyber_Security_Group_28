@@ -301,7 +301,71 @@ class PureWebSocketManager:
         ]
         
         return len(recent_requests) / 5.0
+    
+    async def broadcast_to_all(self, message: dict):
+        """Broadcast message to all connected WebSockets (both admin and client)"""
+        if not self.active_connections:
+            return
+            
+        disconnected = []
+        
+        for connection_info in self.active_connections:
+            try:
+                await connection_info['websocket'].send_text(json.dumps(message))
+                logger.debug(f"📢 Broadcasted {message.get('type')} to {connection_info['type']} dashboard")
+            except Exception as e:
+                logger.error(f"Error broadcasting to WebSocket: {e}")
+                disconnected.append(connection_info)
+        
+        # Clean up disconnected clients
+        for connection_info in disconnected:
+            self.disconnect(connection_info['websocket'])
 
+    async def broadcast_to_admins(self, message: dict):
+        """Broadcast message only to admin dashboards"""
+        admin_connections = [
+            conn for conn in self.active_connections 
+            if conn.get('type') == 'admin'
+        ]
+        
+        if not admin_connections:
+            return
+            
+        disconnected = []
+        
+        for connection_info in admin_connections:
+            try:
+                await connection_info['websocket'].send_text(json.dumps(message))
+                logger.debug(f"📢 Broadcasted to admin dashboard")
+            except Exception as e:
+                logger.error(f"Error broadcasting to admin WebSocket: {e}")
+                disconnected.append(connection_info)
+        
+        for connection_info in disconnected:
+            self.disconnect(connection_info['websocket'])
+
+    async def broadcast_to_client(self, client_id: str, message: dict):
+        """Broadcast message only to specific client dashboard"""
+        client_connections = [
+            conn for conn in self.active_connections 
+            if conn.get('type') == 'client' and conn.get('client_id') == client_id
+        ]
+        
+        if not client_connections:
+            return
+            
+        disconnected = []
+        
+        for connection_info in client_connections:
+            try:
+                await connection_info['websocket'].send_text(json.dumps(message))
+                logger.debug(f"🔴 Broadcasted to client {client_id}")
+            except Exception as e:
+                logger.error(f"Error broadcasting to client WebSocket: {e}")
+                disconnected.append(connection_info)
+        
+        for connection_info in disconnected:
+            self.disconnect(connection_info['websocket'])
 
 
 class WAFMiddleware:
