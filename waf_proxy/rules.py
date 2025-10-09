@@ -116,3 +116,29 @@ class RuleEngine:
         severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
         
         return sorted(rules, key=lambda x: severity_order.get(x.get('severity', 'medium'), 2))
+    
+    def _apply_single_rule(self, rule: Dict, scan_data: str, client_ip: str, user_agent: str) -> WAFResult:
+        """Apply a single rule to the request data"""
+        try:
+            rule_type = rule.get("rule_type", "")
+            rule_value = rule.get("value", "")
+            rule_id = rule.get("id")
+            severity = rule.get("severity", "medium")
+            
+            if not rule_type or not rule_value:
+                return WAFResult(blocked=False)
+            
+            # Route to appropriate rule handler
+            handler_method = getattr(self, f"_handle_{rule_type}", None)
+            if handler_method and callable(handler_method):
+                result = handler_method(rule_value, scan_data, client_ip, user_agent)
+                if result.blocked:
+                    result.rule_id = rule_id
+                    result.severity = severity
+                    return result
+            
+            return WAFResult(blocked=False)
+            
+        except Exception as e:
+            logger.error(f"Error applying rule {rule.get('id')}: {e}")
+            return WAFResult(blocked=False)
