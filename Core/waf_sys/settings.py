@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'clients',
     'rules',
     'dashboard'
+    'logs'
 ]
 
 MIDDLEWARE = [
