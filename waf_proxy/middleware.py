@@ -49,3 +49,11 @@ class WAFMiddleware:
                     'detail': f'No WAF configuration found for {client_host}'
                 }
             )
+        
+        # Perform WAF analysis
+        waf_result = await self._analyze_request(request, client_config, client_ip)
+        
+        # Send real-time update via WebSocket to both dashboards (non-blocking)
+        asyncio.create_task(
+            self._send_real_time_update(request, client_config, client_ip, waf_result)
+        )
