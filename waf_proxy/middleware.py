@@ -419,6 +419,39 @@ class PureWebSocketManager:
         except Exception as e:
             logger.error(f"Error broadcasting request event: {e}")
 
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        """Send message to specific WebSocket"""
+        try:
+            await websocket.send_text(message)
+        except Exception as e:
+            logger.error(f"Error sending message to WebSocket: {e}")
+            self.disconnect(websocket)
+
+    def get_connection_count(self) -> int:
+        """Get number of active connections"""
+        return len(self.active_connections)
+
+    def get_admin_connection_count(self) -> int:
+        """Get number of active admin connections"""
+        return len([conn for conn in self.active_connections if conn.get('type') == 'admin'])
+
+    def get_client_connection_count(self) -> int:
+        """Get number of active client connections"""
+        return len([conn for conn in self.active_connections if conn.get('type') == 'client'])
+
+    async def health_check(self) -> Dict:
+        """Health check method"""
+        return {
+            "total_connections": self.get_connection_count(),
+            "admin_connections": self.get_admin_connection_count(),
+            "client_connections": self.get_client_connection_count(),
+            "last_api_fetch": self.last_api_fetch.isoformat() if self.last_api_fetch else None,
+            "current_rps": self.calculate_current_rps(),
+            "cache_updated": bool(self.stats_cache)
+        }
+
+
+
 class WAFMiddleware:
     """
     Professional WAF Middleware with real-time WebSocket updates to both admin and client dashboards
