@@ -35,3 +35,67 @@
                 </div>
             </div>
             {% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Rule Type -->
+                <div>
+                    <label for="{{ form.rule_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-filter mr-1"></i>Rule Type
+                    </label>
+                    {{ form.rule_type }}
+                    {% if form.rule_type.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.rule_type.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Severity -->
+                <div>
+                    <label for="{{ form.severity.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Severity
+                    </label>
+                    {{ form.severity }}
+                    {% if form.severity.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.severity.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Rule Value/Pattern -->
+            <div class="mt-6">
+                <label for="{{ form.value.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-code mr-1"></i>Rule Pattern/Value
+                </label>
+                {{ form.value }}
+                {% if form.value.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.value.errors }}</p>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">
+                    Enter one pattern per line. Use regex for complex matching.
+                    {% if rule_type_examples %}
+                    <span id="rule-example" class="text-blue-600 cursor-pointer hover:text-blue-800">View examples</span>
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Description -->
+            <div class="mt-6">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-align-left mr-1"></i>Description
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.description.errors }}</p>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">Describe what this rule detects and why it's important</p>
+            </div>
+            
+            <!-- Active Status -->
+            <div class="mt-6">
+                <label class="flex items-center">
+                    {{ form.is_active }}
+                    <span class="ml-2 text-sm font-medium text-gray-700">Active Rule</span>
+                </label>
+                {% if form.is_active.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.is_active.errors }}</p>
+                {% endif %}
+                <p class="mt-1 text-sm text-gray-500">Whether this rule should be actively enforced</p>
+            </div>
