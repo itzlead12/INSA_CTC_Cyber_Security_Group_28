@@ -62,3 +62,39 @@ class WAFMiddleware:
             return await self._handle_blocked_request(request, waf_result, client_config, client_ip)
         else:
             return await self._handle_allowed_request(request, client_config, client_ip, call_next)
+
+    def _get_client_ip(self, request: Request) -> str:
+        """
+        Extract real client IP address from headers.
+        This gets the actual request sender's IP address, not Docker internal IPs.
+        """
+        # Common headers that contain real client IP in proxy environments
+        ip_headers = [
+            'x-real-ip',           # Nginx
+            'x-forwarded-for',     # Most proxies (including Docker)
+            'x-forwarded',
+            'forwarded-for', 
+            'forwarded',
+            'x-cluster-client-ip',
+            'proxy-client-ip',
+            'true-client-ip',
+            'cf-connecting-ip',    # Cloudflare
+        ]
+        
+        # Check each header in order
+        for header in ip_headers:
+            ip = request.headers.get(header)
+            if ip:
+                # x-forwarded-for can contain multiple IPs (client, proxy1, proxy2)
+                if ',' in ip:
+                    ip = ip.split(',')[0].strip()
+                
+                # Validate IP format
+                if self._is_valid_ip(ip):
+                    self.logger.info(f"Found real client IP {ip} in header {header}")
+                    return ip
+        
+        # Fallback to direct connection IP
+        direct_ip = request.client.host if request.client else "0.0.0.0"
+        self.logger.info(f"Using direct connection IP: {direct_ip}")
+        return direct_ip
